@@ -1,0 +1,18 @@
+from typing import Dict, Any
+
+def check_order_status(order_id: str) -> str:
+    """Mock tool to check order status."""
+    # In a real app, this would hit a database or external API.
+    return f"Order {order_id} is currently being processed and will ship tomorrow."
+
+def escalate_to_human(issue_description: str, user_id: str) -> str:
+    """Escalates an issue to a human agent."""
+    from backend.tools.slack_notifier import send_slack_alert
+    
+    alert_msg = f"URGENT HANDOFF REQUEST from {user_id}:\n{issue_description}"
+    success = send_slack_alert(alert_msg)
+    
+    if success:
+        return "Your issue has been escalated to a human agent. They will contact you shortly."
+    else:
+        return "Failed to escalate to a human agent at this time."
