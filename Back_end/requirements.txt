@@ -1,0 +1,15 @@
+fastapi
+fastmcp
+mcp[cli]
+uvicorn[standard]
+llama-index
+chromadb
+slack-sdk
+cohere
+tesseract
+llama-index-postprocessor-cohere-rerank
+llama-index-vector-stores-pinecone
+pinecone
+llama-index-llms-groq
+llama-index-embeddings-google-genai
+tavily-python
