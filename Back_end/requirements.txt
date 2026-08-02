@@ -3,9 +3,10 @@ fastmcp
 mcp[cli]
 uvicorn[standard]
 llama-index
-chromadb
 slack-sdk
 cohere
+pymupdf
+pytesseract
 tesseract
 llama-index-postprocessor-cohere-rerank
 llama-index-vector-stores-pinecone
@@ -13,3 +14,8 @@ pinecone
 llama-index-llms-groq
 llama-index-embeddings-google-genai
 tavily-python
+# Cloud storage
+cloudinary
+# Background scheduler for 24-hr file cleanup
+APScheduler>=3.10.0
+requests

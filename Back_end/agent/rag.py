@@ -8,9 +8,9 @@ from llama_index.llms.groq import Groq
 from pinecone import Pinecone
 
 try:
-    from backend.app.config import EMBED_MODEL
+    from Back_end.app.config import EMBED_MODEL
 except ImportError:
-    from backend.app.config import EMBED_MODEL
+    from app.config import EMBED_MODEL
 from dotenv import load_dotenv
 
 load_dotenv()

@@ -8,13 +8,13 @@ from llama_index.llms.groq import Groq
 from dotenv import load_dotenv
 
 try:
-    from backend.agent.rag import query_rag
-    from backend.agent.tools import check_order_status, escalate_to_human
-    from backend.agent.intent import classify_intent
+    from Back_end.agent.rag import query_rag
+    from Back_end.agent.tools import check_order_status, escalate_to_human
+    from Back_end.agent.intent import classify_intent
 except ImportError:
-    from backend.agent.rag import query_rag
-    from backend.agent.tools import check_order_status, escalate_to_human
-    from backend.agent.intent import classify_intent
+    from agent.rag import query_rag
+    from agent.tools import check_order_status, escalate_to_human
+    from agent.intent import classify_intent
 
 load_dotenv()
 
@@ -178,7 +178,10 @@ async def stream_chat_with_agent(message: str):
       - order_query    → instant response, yielded as a single chunk
       - ambiguous      → ReAct agent (non-streaming, yields full response when done)
     """
-    from backend.agent.rag import get_query_engine
+    try:
+        from Back_end.agent.rag import get_query_engine
+    except ImportError:
+        from agent.rag import get_query_engine
 
     result = classify_intent(message)
     intent = result.intent

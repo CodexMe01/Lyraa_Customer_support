@@ -16,8 +16,8 @@ async def lifespan(app: FastAPI):
             from agent.rag import get_query_engine
             from agent.bot import get_support_agent
         except ImportError:
-            from backend.agent.rag import get_query_engine
-            from backend.agent.bot import get_support_agent
+            from Back_end.agent.rag import get_query_engine
+            from Back_end.agent.bot import get_support_agent
 
         get_query_engine()   # builds + caches Pinecone, embeddings, Groq, Cohere
         get_support_agent()  # builds + caches the ReAct agent
@@ -46,7 +46,7 @@ app.add_middleware(
 try: 
     from app.api.endpoints import router as api_router
 except ImportError:
-    from backend.app.api.endpoints import router as api_router
+    from Back_end.app.api.endpoints import router as api_router
     
 
 app.include_router(api_router, prefix="/api")

@@ -7,7 +7,7 @@ def check_order_status(order_id: str) -> str:
 
 def escalate_to_human(issue_description: str, user_id: str) -> str:
     """Escalates an issue to a human agent."""
-    from backend.tools.slack_notifier import send_slack_alert
+    from Back_end.tools.slack_notifier import send_slack_alert
     
     alert_msg = f"URGENT HANDOFF REQUEST from {user_id}:\n{issue_description}"
     success = send_slack_alert(alert_msg)
