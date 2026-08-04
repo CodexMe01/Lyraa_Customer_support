@@ -25,4 +25,10 @@ dependencies = [
     "tavily-python>=0.7.27",
     "tesseract>=0.1.3",
     "uvicorn[standard]>=0.52.1",
+    "arize-phoenix>=14.6.0 ; sys_platform != 'win32'",
+    "openinference-instrumentation-llama-index>=4.4.4 ; sys_platform != 'win32'",
+    "opentelemetry-api==1.40.0 ; sys_platform != 'win32'",
+    "opentelemetry-sdk==1.40.0 ; sys_platform != 'win32'",
+    "opentelemetry-exporter-otlp-proto-grpc==1.40.0 ; sys_platform != 'win32'",
+    "opentelemetry-exporter-otlp-proto-http==1.40.0 ; sys_platform != 'win32'",
 ]

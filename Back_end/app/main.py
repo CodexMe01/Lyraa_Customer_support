@@ -1,3 +1,4 @@
+import importlib
 import os
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
@@ -6,11 +7,28 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Pre-warm all heavy singletons at server startup so the first user request is fast."""
-    print("[Startup] Pre-warming query engine and support agent...")
+    """Pre-warm heavy singletons and enable tracing when the optional packages are available."""
+    print("[startup] Pre-warming query engine and support agent...")
+
+    try:
+        llama_index_module = importlib.import_module("openinference.instrumentation.llama_index")
+        phoenix_module = importlib.import_module("phoenix.otel")
+    except Exception:
+        print("[startup] Phoenix tracing dependencies are unavailable; continuing without tracing.")
+    else:
+        try:
+            LlamaIndexInstrumentor = llama_index_module.LlamaIndexInstrumentor
+            register = phoenix_module.register
+            os.environ["PHOENIX_COLLECTOR_ENDPOINT"] = os.getenv("PHOENIX_COLLECTOR_ENDPOINT", "")
+            os.environ["PHOENIX_API_KEY"] = os.getenv("PHOENIX_API_KEY", "")
+            tracer_provider = register(project_name="llamaindex-tracing-tutorial", protocol="http/protobuf")
+            LlamaIndexInstrumentor().instrument(tracer_provider=tracer_provider)
+            print("[startup] Phoenix tracing enabled.")
+        except Exception as exc:
+            print(f"[startup] Phoenix tracing setup failed: {exc}")
+
     try:
         try:
             from agent.rag import get_query_engine
@@ -21,11 +39,12 @@ async def lifespan(app: FastAPI):
 
         get_query_engine()   # builds + caches Pinecone, embeddings, Groq, Cohere
         get_support_agent()  # builds + caches the ReAct agent
-        print("[Startup] Warm-up complete. Server ready.")
-    except Exception as e:
-        print(f"[Startup] Warning: Warm-up failed: {e}")
+        print("[startup] Warm-up complete. Server ready.")
+    except Exception as exc:
+        print(f"[startup] Warning: Warm-up failed: {exc}")
+
     yield  # server runs here
-    print("[Shutdown] Server shutting down.")
+    print("[shutdown] Server shutting down.")
 
 
 app = FastAPI(

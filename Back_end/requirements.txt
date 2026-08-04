@@ -19,3 +19,13 @@ cloudinary
 # Background scheduler for 24-hr file cleanup
 APScheduler>=3.10.0
 requests
+
+# Optional tracing dependencies; skipped on Windows due to native build requirements
+arize-phoenix ; platform_system != "Windows"
+openinference-instrumentation-llama-index ; platform_system != "Windows"
+
+# Optional OpenTelemetry pins for tracing; skipped on Windows
+opentelemetry-api==1.40.0 ; platform_system != "Windows"
+opentelemetry-sdk==1.40.0 ; platform_system != "Windows"
+opentelemetry-exporter-otlp-proto-grpc==1.40.0 ; platform_system != "Windows"
+opentelemetry-exporter-otlp-proto-http==1.40.0 ; platform_system != "Windows"
