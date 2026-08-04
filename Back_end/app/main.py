@@ -1,11 +1,17 @@
 import importlib
 import os
+import sys
 from contextlib import asynccontextmanager
+from pathlib import Path
+
 from dotenv import load_dotenv
-
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+for candidate in (str(PROJECT_ROOT), str(PROJECT_ROOT.parent)):
+    if candidate not in sys.path:
+        sys.path.insert(0, candidate)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -30,12 +36,8 @@ async def lifespan(app: FastAPI):
             print(f"[startup] Phoenix tracing setup failed: {exc}")
 
     try:
-        try:
-            from agent.rag import get_query_engine
-            from agent.bot import get_support_agent
-        except ImportError:
-            from Back_end.agent.rag import get_query_engine
-            from Back_end.agent.bot import get_support_agent
+        from agent.rag import get_query_engine
+        from agent.bot import get_support_agent
 
         get_query_engine()   # builds + caches Pinecone, embeddings, Groq, Cohere
         get_support_agent()  # builds + caches the ReAct agent
@@ -62,11 +64,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-try: 
-    from app.api.endpoints import router as api_router
-except ImportError:
-    from Back_end.app.api.endpoints import router as api_router
-    
+from app.api.endpoints import router as api_router
 
 app.include_router(api_router, prefix="/api")
 

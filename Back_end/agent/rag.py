@@ -1,4 +1,7 @@
 import os
+import sys
+from pathlib import Path
+
 from llama_index.core import VectorStoreIndex, QueryBundle, Settings
 from llama_index.vector_stores.pinecone import PineconeVectorStore
 from llama_index.postprocessor.cohere_rerank import CohereRerank
@@ -7,10 +10,12 @@ from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
 from llama_index.llms.groq import Groq
 from pinecone import Pinecone
 
-try:
-    from Back_end.app.config import EMBED_MODEL
-except ImportError:
-    from app.config import EMBED_MODEL
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+for candidate in (str(PROJECT_ROOT), str(PROJECT_ROOT.parent)):
+    if candidate not in sys.path:
+        sys.path.insert(0, candidate)
+
+from app.config import EMBED_MODEL
 from dotenv import load_dotenv
 
 load_dotenv()

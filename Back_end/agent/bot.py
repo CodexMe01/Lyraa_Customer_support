@@ -2,19 +2,22 @@ import os
 import asyncio
 import json
 import random
+import sys
+from pathlib import Path
+
 from llama_index.core.tools import FunctionTool
 from llama_index.core.agent import ReActAgent
 from llama_index.llms.groq import Groq
 from dotenv import load_dotenv
 
-try:
-    from Back_end.agent.rag import query_rag
-    from Back_end.agent.tools import check_order_status, escalate_to_human
-    from Back_end.agent.intent import classify_intent
-except ImportError:
-    from agent.rag import query_rag
-    from agent.tools import check_order_status, escalate_to_human
-    from agent.intent import classify_intent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+for candidate in (str(PROJECT_ROOT), str(PROJECT_ROOT.parent)):
+    if candidate not in sys.path:
+        sys.path.insert(0, candidate)
+
+from agent.rag import query_rag
+from agent.tools import check_order_status, escalate_to_human
+from agent.intent import classify_intent
 
 load_dotenv()
 
@@ -178,10 +181,7 @@ async def stream_chat_with_agent(message: str):
       - order_query    → instant response, yielded as a single chunk
       - ambiguous      → ReAct agent (non-streaming, yields full response when done)
     """
-    try:
-        from Back_end.agent.rag import get_query_engine
-    except ImportError:
-        from agent.rag import get_query_engine
+    from agent.rag import get_query_engine
 
     result = classify_intent(message)
     intent = result.intent

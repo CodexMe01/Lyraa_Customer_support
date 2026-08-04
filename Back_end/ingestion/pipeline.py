@@ -1,36 +1,34 @@
 import os
+import sys
+from pathlib import Path
 from typing import Optional
 
 from llama_index.core import VectorStoreIndex, Document, Settings
 from llama_index.core import StorageContext
 from llama_index.vector_stores.pinecone import PineconeVectorStore
-from Back_end.ingestion.loaders import load_local_documents
-from Back_end.ingestion.loaders import load_pdf_with_ocr, load_image_with_ocr
+from ingestion.loaders import load_local_documents
+from ingestion.loaders import load_pdf_with_ocr, load_image_with_ocr
 from llama_index.core.node_parser import SemanticSplitterNodeParser, SentenceSplitter
 from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
 from pinecone import Pinecone, ServerlessSpec
 from dotenv import load_dotenv
 
-from Back_end.storage.cloudinary_storage import CloudinaryStorage
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+for candidate in (str(PROJECT_ROOT), str(PROJECT_ROOT.parent)):
+    if candidate not in sys.path:
+        sys.path.insert(0, candidate)
+
+from storage.cloudinary_storage import CloudinaryStorage
 
 load_dotenv()
 
-try:
-    from Back_end.app.config import (
-        EMBED_MODEL,
-        SEMANTIC_BUFFER_SIZE,
-        SEMANTIC_BREAKPOINT_PERCENTILE,
-        SEMANTIC_FALLBACK_CHUNK_SIZE,
-        SEMANTIC_FALLBACK_CHUNK_OVERLAP,
-    )
-except ImportError:
-    from app.config import (
-        EMBED_MODEL,
-        SEMANTIC_BUFFER_SIZE,
-        SEMANTIC_BREAKPOINT_PERCENTILE,
-        SEMANTIC_FALLBACK_CHUNK_SIZE,
-        SEMANTIC_FALLBACK_CHUNK_OVERLAP,
-    )
+from app.config import (
+    EMBED_MODEL,
+    SEMANTIC_BUFFER_SIZE,
+    SEMANTIC_BREAKPOINT_PERCENTILE,
+    SEMANTIC_FALLBACK_CHUNK_SIZE,
+    SEMANTIC_FALLBACK_CHUNK_OVERLAP,
+)
 
 def build_splitter(embed_model) -> SemanticSplitterNodeParser:
     fallback = SentenceSplitter(

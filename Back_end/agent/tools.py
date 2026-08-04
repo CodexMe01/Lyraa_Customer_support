@@ -1,4 +1,11 @@
+import sys
+from pathlib import Path
 from typing import Dict, Any
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+for candidate in (str(PROJECT_ROOT), str(PROJECT_ROOT.parent)):
+    if candidate not in sys.path:
+        sys.path.insert(0, candidate)
 
 def check_order_status(order_id: str) -> str:
     """Mock tool to check order status."""
@@ -7,7 +14,7 @@ def check_order_status(order_id: str) -> str:
 
 def escalate_to_human(issue_description: str, user_id: str) -> str:
     """Escalates an issue to a human agent."""
-    from Back_end.tools.slack_notifier import send_slack_alert
+    from tools.slack_notifier import send_slack_alert
     
     alert_msg = f"URGENT HANDOFF REQUEST from {user_id}:\n{issue_description}"
     success = send_slack_alert(alert_msg)

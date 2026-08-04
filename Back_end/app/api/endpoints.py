@@ -15,7 +15,9 @@ Upload and ingestion remain independent steps.
 import os
 import base64
 import shutil
+import sys
 import tempfile
+from pathlib import Path
 from urllib.parse import urlparse, quote
 
 from fastapi import APIRouter, HTTPException, UploadFile, File, Query, Response
@@ -23,11 +25,14 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from tavily import TavilyClient
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+for candidate in (str(PROJECT_ROOT), str(PROJECT_ROOT.parent)):
+    if candidate not in sys.path:
+        sys.path.insert(0, candidate)
 
-from Back_end.agent.bot import chat_with_agent, stream_chat_with_agent
-from Back_end.ingestion.pipeline import run_ingestion_pipeline
-from Back_end.storage.cloudinary_storage import CloudinaryStorage
-
+from agent.bot import chat_with_agent, stream_chat_with_agent
+from ingestion.pipeline import run_ingestion_pipeline
+from storage.cloudinary_storage import CloudinaryStorage
 
 from dotenv import load_dotenv
 
