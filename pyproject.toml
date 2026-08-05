@@ -31,4 +31,5 @@ dependencies = [
     "opentelemetry-sdk==1.40.0 ; sys_platform != 'win32'",
     "opentelemetry-exporter-otlp-proto-grpc==1.40.0 ; sys_platform != 'win32'",
     "opentelemetry-exporter-otlp-proto-http==1.40.0 ; sys_platform != 'win32'",
+    "pydantic>=2.13.4",
 ]

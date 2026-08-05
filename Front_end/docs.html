@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lyraa Documentation — Install, Connect &amp; Use</title>
+  <meta name="description" content="Complete guide to installing Lyraa Agent, connecting the MCP server, and using the RAG-powered customer support platform." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="index.css" />
+  <style>
+    :root {
+      --docs-sidebar-width: 260px;
+      --docs-toc-width: 220px;
+      --docs-content-max: 760px;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+    body { background: var(--color-cream); }
+
+    .docs-shell {
+      display: grid;
+      grid-template-columns: var(--docs-sidebar-width) 1fr var(--docs-toc-width);
+      grid-template-areas: "header header header" "sidebar content toc";
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .docs-header {
+      grid-area: header;
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--color-border);
+      display: flex; align-items: center; gap: 2rem;
+      padding: 0 2rem; height: 60px;
+    }
+    .docs-header-logo {
+      display: flex; align-items: center; gap: 0.6rem;
+      font-weight: 700; font-size: 1.05rem; letter-spacing: -0.025em;
+      text-decoration: none; color: var(--color-off-black); flex-shrink: 0;
+    }
+    .docs-header-logo svg { width: 28px; height: 28px; }
+    .docs-header-divider { width: 1px; height: 20px; background: var(--color-border); }
+    .docs-header-badge {
+      font-size: 0.78rem; font-weight: 500; color: var(--color-gray-text);
+      background: var(--color-canvas); border: 1px solid var(--color-border);
+      padding: 0.2rem 0.65rem; border-radius: var(--radius-full);
+    }
+    .docs-header-nav { display: flex; align-items: center; gap: 1.5rem; margin-left: auto; }
+    .docs-header-nav a { font-size: 0.875rem; color: var(--color-gray-text); transition: color var(--transition-fast); }
+    .docs-header-nav a:hover { color: var(--color-off-black); }
+    .docs-header-nav a.active { color: var(--color-blue); font-weight: 500; }
+    .docs-header-cta {
+      background: var(--color-off-black) !important; color: #fff !important;
+      padding: 0.4rem 1rem; border-radius: var(--radius-full);
+      font-size: 0.85rem; font-weight: 500;
+      transition: background var(--transition-fast), transform var(--transition-fast);
+    }
+    .docs-header-cta:hover { background: #333 !important; transform: translateY(-1px); }
+
+    /* Sidebar */
+    .docs-sidebar {
+      grid-area: sidebar;
+      position: sticky; top: 60px;
+      height: calc(100vh - 60px); overflow-y: auto;
+      border-right: 1px solid var(--color-border);
+      padding: 2rem 0; background: var(--color-off-white);
+      scrollbar-width: thin;
+    }
+    .docs-sidebar::-webkit-scrollbar { width: 4px; }
+    .docs-sidebar::-webkit-scrollbar-thumb { background: var(--color-clay); border-radius: 2px; }
+    .sidebar-section { margin-bottom: 2rem; padding: 0 1.25rem; }
+    .sidebar-section-label {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--color-gray-light);
+      margin-bottom: 0.5rem; padding: 0 0.5rem;
+    }
+    .sidebar-link {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.45rem 0.75rem; border-radius: var(--radius-sm);
+      font-size: 0.875rem; color: var(--color-gray-text);
+      transition: all var(--transition-fast); text-decoration: none;
+    }
+    .sidebar-link:hover { background: var(--color-canvas); color: var(--color-off-black); }
+    .sidebar-link.active { background: var(--color-blue); color: #fff; }
+
+    /* Main content */
+    .docs-content {
+      grid-area: content; padding: 3rem 3.5rem;
+      max-width: calc(var(--docs-content-max) + 7rem);
+      min-height: calc(100vh - 60px);
+    }
+
+    /* TOC */
+    .docs-toc {
+      grid-area: toc;
+      position: sticky; top: 60px;
+      height: calc(100vh - 60px); overflow-y: auto;
+      padding: 2rem 1.5rem; border-left: 1px solid var(--color-border);
+    }
+    .toc-label {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--color-gray-light); margin-bottom: 0.75rem;
+    }
+    .toc-link {
+      display: block; font-size: 0.8rem; color: var(--color-gray-text);
+      padding: 0.3rem 0.5rem; border-left: 2px solid transparent;
+      text-decoration: none; transition: all var(--transition-fast);
+    }
+    .toc-link:hover { color: var(--color-off-black); }
+    .toc-link.active { border-left-color: var(--color-blue); color: var(--color-blue); font-weight: 500; }
+
+    /* Sections */
+    .docs-section { margin-bottom: 4rem; padding-top: 1rem; }
+    .section-eyebrow {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--color-blue); margin-bottom: 0.75rem;
+    }
+    .section-eyebrow::before { content: ''; width: 16px; height: 2px; background: var(--color-blue); border-radius: 1px; }
+    .docs-h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.04em; line-height: 1.15; color: var(--color-off-black); margin-bottom: 1rem; }
+    .docs-h2 {
+      font-size: 1.35rem; font-weight: 600; letter-spacing: -0.03em; color: var(--color-off-black);
+      margin-bottom: 0.75rem; margin-top: 2.5rem; display: flex; align-items: center; gap: 0.6rem;
+    }
+    .docs-h3 { font-size: 1rem; font-weight: 600; color: var(--color-off-black); margin: 1.5rem 0 0.5rem; }
+    .docs-lead { font-size: 1.05rem; color: var(--color-gray-text); line-height: 1.7; margin-bottom: 2rem; }
+    .docs-p { font-size: 0.9375rem; color: #333; line-height: 1.7; margin-bottom: 1rem; }
+
+    /* Steps */
+    .steps { display: flex; flex-direction: column; gap: 0; margin: 1.5rem 0; }
+    .step { display: grid; grid-template-columns: 36px 1fr; gap: 0 1rem; }
+    .step-number-wrap { display: flex; flex-direction: column; align-items: center; }
+    .step-number {
+      width: 36px; height: 36px; background: var(--color-off-black); color: #fff;
+      border-radius: 50%; font-size: 0.8rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .step-line { width: 2px; flex: 1; background: var(--color-border); margin: 4px auto 0; min-height: 24px; }
+    .step:last-child .step-line { display: none; }
+    .step-body { padding-bottom: 2rem; }
+    .step-title { font-size: 1rem; font-weight: 600; color: var(--color-off-black); margin-bottom: 0.5rem; padding-top: 0.45rem; }
+    .step-desc { font-size: 0.9rem; color: var(--color-gray-text); line-height: 1.65; }
+
+    /* Code blocks */
+    .code-block { position: relative; margin: 1rem 0; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--color-border); }
+    .code-block-header {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #f5f5f0; border-bottom: 1px solid var(--color-border); padding: 0.5rem 1rem;
+    }
+    .code-block-lang { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--color-gray-light); }
+    .code-copy-btn {
+      display: flex; align-items: center; gap: 0.35rem; font-size: 0.75rem; font-weight: 500;
+      color: var(--color-gray-text); background: none; border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm); padding: 0.2rem 0.6rem; cursor: pointer;
+      transition: all var(--transition-fast); font-family: var(--font-sans);
+    }
+    .code-copy-btn:hover { background: var(--color-off-black); color: #fff; border-color: var(--color-off-black); }
+    .code-copy-btn.copied { background: #00c853; color: #fff; border-color: #00c853; }
+    .code-block pre { margin: 0; padding: 1.25rem; background: #1a1a1a; overflow-x: auto; scrollbar-width: thin; }
+    .code-block pre::-webkit-scrollbar { height: 4px; }
+    .code-block pre::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
+    .code-block code { font-family: var(--font-mono); font-size: 0.82rem; line-height: 1.65; color: #e4e4e4; }
+    .tok-kw { color: #c678dd; } .tok-str { color: #98c379; } .tok-cmt { color: #5c6370; font-style: italic; }
+    .tok-num { color: #d19a66; } .tok-key { color: #61afef; } .tok-op { color: #56b6c2; }
+    .tok-fn { color: #e06c75; } .tok-var { color: #abb2bf; }
+    .code-inline {
+      font-family: var(--font-mono); font-size: 0.82em; background: #f0efea;
+      border: 1px solid var(--color-border); padding: 0.1em 0.45em; border-radius: 4px;
+      color: var(--color-off-black);
+    }
+
+    /* Callout */
+    .callout { display: flex; gap: 0.75rem; padding: 0.9rem 1.1rem; border-radius: var(--radius-md); margin: 1rem 0; font-size: 0.875rem; line-height: 1.6; }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; }
+    .callout--info    { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+    .callout--warn    { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+    .callout--success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+    .callout--danger  { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+    .callout-body strong { display: block; font-weight: 600; margin-bottom: 0.2rem; }
+
+    /* API Table */
+    .api-table-wrap { overflow-x: auto; margin: 1rem 0 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+    .api-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .api-table th { background: #f5f5f0; font-weight: 600; font-size: 0.75rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-gray-text); padding: 0.65rem 1rem; text-align: left; border-bottom: 1px solid var(--color-border); }
+    .api-table td { padding: 0.75rem 1rem; border-bottom: 1px solid rgba(0,0,0,0.05); vertical-align: top; color: #333; line-height: 1.55; }
+    .api-table tr:last-child td { border-bottom: none; }
+    .api-table tr:hover td { background: rgba(0,0,0,0.015); }
+    .method-badge { display: inline-block; font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px; letter-spacing: 0.02em; }
+    .method-get    { background: #dbeafe; color: #1d4ed8; }
+    .method-post   { background: #dcfce7; color: #15803d; }
+    .method-delete { background: #fee2e2; color: #b91c1c; }
+
+    /* Env cards */
+    .env-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem; margin: 1rem 0; }
+    .env-card { background: var(--color-off-white); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 0.85rem 1rem; }
+    .env-card-key { font-family: var(--font-mono); font-size: 0.8rem; font-weight: 600; color: var(--color-blue); margin-bottom: 0.35rem; }
+    .env-card-desc { font-size: 0.8rem; color: var(--color-gray-text); line-height: 1.5; }
+    .env-card-required { display: inline-block; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; background: #fee2e2; color: #b91c1c; padding: 0.1rem 0.4rem; border-radius: 3px; margin-bottom: 0.3rem; }
+    .env-card-optional { display: inline-block; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; background: #f0fdf4; color: #166534; padding: 0.1rem 0.4rem; border-radius: 3px; margin-bottom: 0.3rem; }
+
+    /* Client tabs */
+    .client-tabs { margin: 1rem 0; }
+    .client-tab-btns { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: -1px; }
+    .client-tab-btn { font-size: 0.82rem; font-weight: 500; font-family: var(--font-sans); padding: 0.45rem 1rem; border: 1px solid var(--color-border); border-bottom-color: transparent; border-radius: var(--radius-sm) var(--radius-sm) 0 0; background: var(--color-canvas); color: var(--color-gray-text); cursor: pointer; transition: all var(--transition-fast); }
+    .client-tab-btn:hover { color: var(--color-off-black); background: var(--color-off-white); }
+    .client-tab-btn.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+    .client-tab-panel { display: none; border: 1px solid var(--color-border); border-radius: 0 var(--radius-sm) var(--radius-sm) var(--radius-sm); overflow: hidden; }
+    .client-tab-panel.active { display: block; }
+
+    /* Conversation demo */
+    .convo { display: flex; flex-direction: column; gap: 0.75rem; background: var(--color-off-white); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.25rem; margin: 1rem 0; }
+    .convo-msg { display: flex; gap: 0.65rem; align-items: flex-start; }
+    .convo-avatar { width: 28px; height: 28px; border-radius: 50%; font-size: 0.7rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .convo-avatar--user { background: var(--color-blue); color: #fff; }
+    .convo-avatar--agent { background: var(--color-off-black); color: #fff; }
+    .convo-bubble { background: var(--color-canvas); border-radius: var(--radius-sm); padding: 0.6rem 0.85rem; font-size: 0.875rem; color: var(--color-off-black); line-height: 1.55; max-width: 90%; }
+    .convo-msg--agent .convo-bubble { background: var(--color-off-black); color: #fff; }
+
+    .docs-divider { border: none; border-top: 1px solid var(--color-border); margin: 3rem 0; }
+
+    @media (max-width: 1200px) {
+      .docs-toc { display: none; }
+      .docs-shell { grid-template-columns: var(--docs-sidebar-width) 1fr; grid-template-areas: "header header" "sidebar content"; }
+    }
+    @media (max-width: 768px) {
+      .docs-shell { grid-template-columns: 1fr; grid-template-areas: "header" "content"; }
+      .docs-sidebar { display: none; }
+      .docs-content { padding: 2rem 1.25rem; }
+      .docs-header { padding: 0 1rem; gap: 1rem; }
+    }
+  </style>
+</head>
+
+<body>
+<div class="docs-shell">
+
+  <!-- HEADER -->
+  <header class="docs-header">
+    <a href="index.html" class="docs-header-logo">
+      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="32" height="32" rx="6" fill="#000"/>
+        <rect x="8" y="8" width="3" height="16" rx="1.5" fill="#fff"/>
+        <rect x="14" y="5" width="3" height="22" rx="1.5" fill="#fff"/>
+        <rect x="20" y="8" width="3" height="16" rx="1.5" fill="#fff"/>
+      </svg>
+      Lyraa
+    </a>
+    <div class="docs-header-divider"></div>
+    <span class="docs-header-badge">Docs v1.0</span>
+    <nav class="docs-header-nav">
+      <a href="index.html">Home</a>
+      <a href="docs.html" class="active">Documentation</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="https://github.com" target="_blank">GitHub ↗</a>
+      <a href="dashboard.html" class="docs-header-cta">Open App →</a>
+    </nav>
+  </header>
+
+  <!-- SIDEBAR -->
+  <aside class="docs-sidebar">
+    <div class="sidebar-section">
+      <p class="sidebar-section-label">Getting Started</p>
+      <a href="#overview"     class="sidebar-link active"><span>🚀</span> Overview</a>
+      <a href="#installation" class="sidebar-link"><span>📦</span> Installation</a>
+      <a href="#environment"  class="sidebar-link"><span>🔑</span> Environment Variables</a>
+      <a href="#running"      class="sidebar-link"><span>▶️</span> Running the Server</a>
+    </div>
+    <div class="sidebar-section">
+      <p class="sidebar-section-label">MCP Integration</p>
+      <a href="#mcp-what"    class="sidebar-link"><span>🔌</span> What is the MCP Server?</a>
+      <a href="#mcp-connect" class="sidebar-link"><span>⚙️</span> Connect to a Client</a>
+      <a href="#mcp-clients" class="sidebar-link"><span>🤖</span> Supported Clients</a>
+    </div>
+    <div class="sidebar-section">
+      <p class="sidebar-section-label">API Reference</p>
+      <a href="#api-chat"   class="sidebar-link"><span>💬</span> Chat Endpoints</a>
+      <a href="#api-docs"   class="sidebar-link"><span>📄</span> Document Endpoints</a>
+      <a href="#api-ingest" class="sidebar-link"><span>🗄️</span> Ingestion &amp; Search</a>
+    </div>
+    <div class="sidebar-section">
+      <p class="sidebar-section-label">Using Lyraa</p>
+      <a href="#usage-examples"  class="sidebar-link"><span>💡</span> Example Conversations</a>
+      <a href="#troubleshooting" class="sidebar-link"><span>🛠️</span> Troubleshooting</a>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="docs-content">
+
+    <!-- Overview -->
+    <section class="docs-section" id="overview">
+      <span class="section-eyebrow">Documentation</span>
+      <h1 class="docs-h1">Lyraa Agent — Developer Guide</h1>
+      <p class="docs-lead">Lyraa is an open-source, RAG-powered customer support agent. It combines a FastAPI backend, a Pinecone vector store, Groq LLM inference, and an MCP server — so any AI coding assistant can query it as a tool.</p>
+      <div class="callout callout--info">
+        <span class="callout-icon">ℹ️</span>
+        <div class="callout-body">
+          <strong>Before you start</strong>
+          You need Python 3.10+, <span class="code-inline">uv</span> (recommended) or <span class="code-inline">pip</span>, and API keys for Groq, Pinecone, Cohere, and Google Gemini. All keys have free tiers.
+        </div>
+      </div>
+    </section>
+
+    <hr class="docs-divider">
+
+    <!-- Installation -->
+    <section class="docs-section" id="installation">
+      <h2 class="docs-h2"><span>📦</span> Installation</h2>
+      <p class="docs-p">Clone the public repository from GitHub and install the dependencies. The project uses <span class="code-inline">uv</span> for fast, reproducible installs — but plain <span class="code-inline">pip</span> works too.</p>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-number-wrap"><div class="step-number">1</div><div class="step-line"></div></div>
+          <div class="step-body">
+            <p class="step-title">Clone the repository</p>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-block-lang">bash</span><button class="code-copy-btn" onclick="copyCode(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+              <pre><code>git clone https://github.com/&lt;your-org&gt;/Lyraa_agent.git
+cd Lyraa_agent</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number-wrap"><div class="step-number">2</div><div class="step-line"></div></div>
+          <div class="step-body">
+            <p class="step-title">Install dependencies</p>
+            <p class="step-desc">Primary method using <strong>uv</strong> (recommended):</p>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-block-lang">bash — uv (recommended)</span><button class="code-copy-btn" onclick="copyCode(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+              <pre><code><span class="tok-cmt"># Install uv if you don't have it</span>
+pip install uv
+
+<span class="tok-cmt"># Sync all dependencies from uv.lock (exact versions)</span>
+uv sync
+
+<span class="tok-cmt"># Activate the virtual environment</span>
+.venv\Scripts\activate    <span class="tok-cmt"># Windows</span>
+source .venv/bin/activate  <span class="tok-cmt"># macOS / Linux</span></code></pre>
+            </div>
+            <p class="step-desc" style="margin-top:0.75rem;">Alternative using <strong>pip</strong>:</p>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-block-lang">bash — pip (alternative)</span><button class="code-copy-btn" onclick="copyCode(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+              <pre><code>python -m venv .venv
+.venv\Scripts\activate     <span class="tok-cmt"># Windows</span>
+source .venv/bin/activate   <span class="tok-cmt"># macOS / Linux</span>
+
+pip install -r Back_end/requirements.txt</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number-wrap"><div class="step-number">3</div></div>
+          <div class="step-body">
+            <p class="step-title">Create your <span class="code-inline">.env</span> file</p>
+            <p class="step-desc">Copy the example and fill in your API keys (see <a href="#environment" class="link-blue">Environment Variables</a> below).</p>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-block-lang">bash</span><button class="code-copy-btn" onclick="copyCode(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+              <pre><code>cp .env.example .env
+<span class="tok-cmt"># Then edit .env with your credentials</span></code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="docs-divider">
+
+    <!-- Environment Variables -->
+    <section class="docs-section" id="environment">
+      <h2 class="docs-h2"><span>🔑</span> Environment Variables</h2>
+      <p class="docs-p">Create a <span class="code-inline">.env</span> file in the project root. All keys marked Required must be set before starting the server.</p>
+
+      <div class="code-block">
+        <div class="code-block-header"><span class="code-block-lang">.env — full template</span><button class="code-copy-btn" onclick="copyCode(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+        <pre><code><span class="tok-cmt"># ── LLM (Groq) ───────────────────────────────────────</span>
+<span class="tok-key">GROQ_API_KEY</span>=<span class="tok-str">gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxx</span>
+<span class="tok-key">GROQ_MODEL</span>=<span class="tok-str">llama-3.1-8b-instant</span>
+
+<span class="tok-cmt"># ── Vector Store (Pinecone) ──────────────────────────</span>
+<span class="tok-key">PINECONE_API_KEY</span>=<span class="tok-str">pcsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxx</span>
+<span class="tok-key">PINECONE_INDEX_NAME</span>=<span class="tok-str">lyraa-knowledge</span>
+<span class="tok-key">PINECONE_ENV</span>=<span class="tok-str">us-east-1-aws</span>
+
+<span class="tok-cmt"># ── Embeddings (Google Gemini) ───────────────────────</span>
+<span class="tok-key">GOOGLE_API_KEY</span>=<span class="tok-str">AIza_xxxxxxxxxxxxxxxxxxxxxxxxxxxx</span>
+
+<span class="tok-cmt"># ── Re-ranking (Cohere) ──────────────────────────────</span>
+<span class="tok-key">COHERE_API_KEY</span>=<span class="tok-str">xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</span>
+
+<span class="tok-cmt"># ── File Storage (Cloudinary) ────────────────────────</span>
+<span class="tok-key">CLOUDINARY_CLOUD_NAME</span>=<span class="tok-str">your-cloud-name</span>
+<span class="tok-key">CLOUDINARY_API_KEY</span>=<span class="tok-str">123456789012345</span>
+<span class="tok-key">CLOUDINARY_API_SECRET</span>=<span class="tok-str">xxxxxxxxxxxxxxxxxxxxxxx</span>
+
+<span class="tok-cmt"># ── Web Scraping (Tavily) ────────────────────────────</span>
+<span class="tok-key">TAVILY_API_KEY</span>=<span class="tok-str">tvly-xxxxxxxxxxxxxxxxxxxxxxxxxxxx</span>
+
+<span class="tok-cmt"># ── Slack escalation (optional) ──────────────────────</span>
+<span class="tok-key">SLACK_BOT_TOKEN</span>=<span class="tok-str">xoxb-xxxxxxxxxxxxxxxxxxxxxxxxxxxx</span>
+<span class="tok-key">SLACK_CHANNEL_ID</span>=<span class="tok-str">C0XXXXXXXXX</span></code></pre>
+      </div>
+
+      <div class="env-grid">
+        <div class="env-card"><div class="env-card-required">Required</div><div class="env-card-key">GROQ_API_KEY</div><div class="env-card-desc">Powers LLM reasoning. Free at <a href="https://console.groq.com" target="_blank" class="link-blue">console.groq.com</a>.</div></div>
+        <div class="env-card"><div class="env-card-required">Required</div><div class="env-card-key">PINECONE_API_KEY</div><div class="env-card-desc">Vector database for RAG. Free tier at <a href="https://pinecone.io" target="_blank" class="link-blue">pinecone.io</a>.</div></div>
+        <div class="env-card"><div class="env-card-required">Required</div><div class="env-card-key">GOOGLE_API_KEY</div><div class="env-card-desc">Gemini embeddings. Get at <a href="https://aistudio.google.com" target="_blank" class="link-blue">aistudio.google.com</a>.</div></div>
+        <div class="env-card"><div class="env-card-required">Required</div><div class="env-card-key">COHERE_API_KEY</div><div class="env-card-desc">Re-ranks search results for precision. <a href="https://cohere.com" target="_blank" class="link-blue">cohere.com</a>.</div></div>
+        <div class="env-card"><div class="env-card-required">Required</div><div class="env-card-key">CLOUDINARY_*</div><div class="env-card-desc">Cloud file storage for knowledge docs. <a href="https://cloudinary.com" target="_blank" class="link-blue">cloudinary.com</a>.</div></div>
+        <div class="env-card"><div class="env-card-required">Required</div><div class="env-card-key">TAVILY_API_KEY</div><div class="env-card-desc">Web scraping for the /add-link endpoint. <a href="https://tavily.com" target="_blank" class="link-blue">tavily.com</a>.</div></div>
+        <div class="env-card"><div class="env-card-optional">Optional</div><div class="env-card-key">SLACK_BOT_TOKEN</div><div class="env-card-desc">Enables human-escalation alerts via Slack.</div></div>
+        <div class="env-card"><div class="env-card-optional">Optional</div><div class="env-card-key">GROQ_MODEL</div><div class="env-card-desc">Override the model. Default: <span class="code-inline">llama-3.1-8b-instant</span>.</div></div>
+      </div>
+    </section>
+
+    <hr class="docs-divider">
+
+    <!-- Running the Server -->
+    <section class="docs-section" id="running">
+      <h2 class="docs-h2"><span>▶️</span> Running the Server</h2>
+      <p class="docs-p">Start the FastAPI backend from inside the <span class="code-inline">Back_end</span> folder.</p>
+      <div class="code-block">
+        <div class="code-block-header"><span class="code-block-lang">bash</span><button class="code-copy-btn" onclick="copyCode(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+        <pre><code>cd Back_end
+uvicorn app.main:app --reload --port 8000</code></pre>
+      </div>
+      <p class="docs-p">The API is at <span class="code-inline">http://localhost:8000</span> and interactive docs at <span class="code-inline">http://localhost:8000/docs</span>.</p>
+      <div class="callout callout--success">
+        <span class="callout-icon">✅</span>
+        <div class="callout-body"><strong>Health check</strong> <span class="code-inline">GET /health</span> returns <span class="code-inline">{"status":"healthy"}</span> when the server is ready.</div>
+      </div>
+    </section>
+
+    <hr class="docs-divider">
+
+    <!-- MCP What -->
+    <section class="docs-section" id="mcp-what">
+      <h2 class="docs-h2"><span>🔌</span> What is the MCP Server?</h2>
+      <p class="docs-p">The Model Context Protocol (MCP) server exposes Lyraa's customer support agent as a <strong>tool</strong> that any MCP-compatible AI client can call directly. Instead of using the REST API, your AI assistant calls <span class="code-inline">ask_support_agent(query)</span> and gets a grounded RAG response.</p>
+      <div class="code-block">
+        <div class="code-block-header"><span class="code-block-lang">python — Back_end/Mcp_server/server.py</span><button class="code-copy-btn" onclick="copyCode(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+        <pre><code><span class="tok-kw">from</span> fastmcp <span class="tok-kw">import</span> FastMCP
+<span class="tok-kw">from</span> agent.bot <span class="tok-kw">import</span> chat_with_agent
+
+mcp = FastMCP(<span class="tok-str">"LyraaSupportServer"</span>)
+
+<span class="tok-op">@</span>mcp.tool()
+<span class="tok-kw">def</span> <span class="tok-fn">ask_support_agent</span>(query: str) -> str:
+    <span class="tok-str">"""Ask the RAG-powered customer support agent a question."""</span>
+    result = chat_with_agent(query)
+    <span class="tok-kw">return</span> result[<span class="tok-str">"response"</span>]</code></pre>
+      </div>
+    </section>
+
+    <hr class="docs-divider">
+
+    <!-- MCP Connect -->
+    <section class="docs-section" id="mcp-connect">
+      <h2 class="docs-h2"><span>⚙️</span> Connect to a Client</h2>
+
+      <h3 class="docs-h3">Option A — Auto-install via CLI</h3>
+      <div class="code-block">
+        <div class="code-block-header"><span class="code-block-lang">bash — automatic</span><button class="code-copy-btn" onclick="copyCode(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+        <pre><code><span class="tok-cmt"># From the project root (virtual env must be active)</span>
+uv run mcp install Back_end/Mcp_server/server.py --name LyraaSupportServer</code></pre>
+      </div>
+
+      <h3 class="docs-h3">Option B — Manual JSON (recommended for reliability)</h3>
+      <div class="api-table-wrap">
+        <table class="api-table">
+          <thead><tr><th>Client</th><th>Config File Path</th></tr></thead>
+          <tbody>
+            <tr><td>Claude Desktop (Windows)</td><td><span class="code-inline">%APPDATA%\Claude\claude_desktop_config.json</span></td></tr>
+            <tr><td>Claude Desktop (macOS)</td><td><span class="code-inline">~/Library/Application Support/Claude/claude_desktop_config.json</span></td></tr>
+            <tr><td>OpenCode</td><td><span class="code-inline">~/.config/opencode/config.json</span></td></tr>
+            <tr><td>Gemini CLI</td><td><span class="code-inline">~/.gemini/config.json</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="docs-p">Add this block (with your actual path) inside <span class="code-inline">mcpServers</span>:</p>
+      <div class="code-block">
+        <div class="code-block-header"><span class="code-block-lang">json — Windows virtual env path</span><button class="code-copy-btn" onclick="copyCode(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+        <pre><code>{
+  <span class="tok-key">"mcpServers"</span>: {
+    <span class="tok-key">"LyraaSupportServer"</span>: {
+      <span class="tok-key">"command"</span>: <span class="tok-str">"C:\\path\\to\\Lyraa_agent\\.venv\\Scripts\\python.exe"</span>,
+      <span class="tok-key">"args"</span>: [
+        <span class="tok-str">"C:\\path\\to\\Lyraa_agent\\Back_end\\Mcp_server\\server.py"</span>
+      ]
+    }
+  }
+}</code></pre>
+      </div>
+      <div class="callout callout--warn">
+        <span class="callout-icon">⚠️</span>
+        <div class="callout-body"><strong>Restart the client after editing the config</strong> — Changes only take effect after fully quitting and relaunching your AI client.</div>
+      </div>
+    </section>
+
+    <hr class="docs-divider">
+
+    <!-- Supported Clients -->
+    <section class="docs-section" id="mcp-clients">
+      <h2 class="docs-h2"><span>🤖</span> Supported Clients</h2>
+      <div class="client-tabs">
+        <div class="client-tab-btns">
+          <button class="client-tab-btn active" data-client="claude">Claude Desktop</button>
+          <button class="client-tab-btn" data-client="opencode">OpenCode</button>
+          <button class="client-tab-btn" data-client="gemini">Gemini CLI</button>
+          <button class="client-tab-btn" data-client="codex">Codex</button>
+        </div>
+        <div class="client-tab-panel active" id="client-claude">
+          <div class="code-block" style="border-radius:0 4px 4px 4px">
+            <div class="code-block-header"><span class="code-block-lang">bash — Claude Desktop</span><button class="code-copy-btn" onclick="copyCode(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+            <pre><code><span class="tok-cmt"># Auto-install (from project root)</span>
+uv run mcp install Back_end/Mcp_server/server.py --name LyraaSupportServer
+
+<span class="tok-cmt"># Restart Claude Desktop, look for LyraaSupportServer in the 🔧 tools menu</span></code></pre>
+          </div>
+        </div>
+        <div class="client-tab-panel" id="client-opencode">
+          <div class="code-block" style="border-radius:0 4px 4px 4px">
+            <div class="code-block-header"><span class="code-block-lang">json — OpenCode config</span><button class="code-copy-btn" onclick="copyCode(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+            <pre><code>{
+  <span class="tok-key">"mcp"</span>: {
+    <span class="tok-key">"servers"</span>: {
+      <span class="tok-key">"LyraaSupportServer"</span>: {
+        <span class="tok-key">"type"</span>: <span class="tok-str">"local"</span>,
+        <span class="tok-key">"command"</span>: <span class="tok-str">"/path/to/.venv/bin/python"</span>,
+        <span class="tok-key">"args"</span>: [<span class="tok-str">"/path/to/Back_end/Mcp_server/server.py"</span>]
+      }
+    }
+  }
+}</code></pre>
+          </div>
+        </div>
+        <div class="client-tab-panel" id="client-gemini">
+          <div class="code-block" style="border-radius:0 4px 4px 4px">
+            <div class="code-block-header"><span class="code-block-lang">json — Gemini CLI config</span><button class="code-copy-btn" onclick="copyCode(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+            <pre><code>{
+  <span class="tok-key">"mcpServers"</span>: {
+    <span class="tok-key">"LyraaSupportServer"</span>: {
+      <span class="tok-key">"command"</span>: <span class="tok-str">"/path/to/.venv/bin/python"</span>,
+      <span class="tok-key">"args"</span>: [<span class="tok-str">"/path/to/Back_end/Mcp_server/server.py"</span>]
+    }
+  }
+}</code></pre>
+          </div>
+        </div>
+        <div class="client-tab-panel" id="client-codex">
+          <div class="code-block" style="border-radius:0 4px 4px 4px">
+            <div class="code-block-header"><span class="code-block-lang">json — Codex config</span><button class="code-copy-btn" onclick="copyCode(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+            <pre><code>{
+  <span class="tok-key">"mcpServers"</span>: {
+    <span class="tok-key">"LyraaSupportServer"</span>: {
+      <span class="tok-key">"command"</span>: <span class="tok-str">"/path/to/.venv/bin/python"</span>,
+      <span class="tok-key">"args"</span>: [<span class="tok-str">"/path/to/Back_end/Mcp_server/server.py"</span>]
+    }
+  }
+}</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="docs-divider">
+
+    <!-- API Chat -->
+    <section class="docs-section" id="api-chat">
+      <h2 class="docs-h2"><span>💬</span> Chat Endpoints</h2>
+      <p class="docs-p">Base URL: <span class="code-inline">http://localhost:8000</span>. All routes are prefixed with <span class="code-inline">/api</span>.</p>
+      <div class="api-table-wrap">
+        <table class="api-table">
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method-badge method-post">POST</span></td><td><span class="code-inline">/api/chat</span></td><td>Send a message. Returns <span class="code-inline">response</span> + <span class="code-inline">intent</span> classification.</td></tr>
+            <tr><td><span class="method-badge method-post">POST</span></td><td><span class="code-inline">/api/chat/stream</span></td><td>Streaming SSE endpoint. Yields <span class="code-inline">{"token":"…","intent":"…","done":bool}</span> events.</td></tr>
+            <tr><td><span class="method-badge method-get">GET</span></td><td><span class="code-inline">/health</span></td><td>Health check. Returns <span class="code-inline">{"status":"healthy"}</span>.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3 class="docs-h3">Example request</h3>
+      <div class="code-block">
+        <div class="code-block-header"><span class="code-block-lang">bash — cURL</span><button class="code-copy-btn" onclick="copyCode(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+        <pre><code>curl -X POST http://localhost:8000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "What is your return policy?", "user_id": "user-1"}'</code></pre>
+      </div>
+    </section>
+
+    <hr class="docs-divider">
+
+    <!-- API Docs -->
+    <section class="docs-section" id="api-docs">
+      <h2 class="docs-h2"><span>📄</span> Document Endpoints</h2>
+      <div class="api-table-wrap">
+        <table class="api-table">
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method-badge method-post">POST</span></td><td><span class="code-inline">/api/upload</span></td><td>Upload a file (PDF, DOCX, TXT, CSV, image) to Cloudinary. Auto-expires after 24 h.</td></tr>
+            <tr><td><span class="method-badge method-get">GET</span></td><td><span class="code-inline">/api/documents?user_id=…</span></td><td>List all cloud-stored files for a user.</td></tr>
+            <tr><td><span class="method-badge method-get">GET</span></td><td><span class="code-inline">/api/documents/download?public_id=…</span></td><td>Download a file from Cloudinary by its public ID.</td></tr>
+            <tr><td><span class="method-badge method-delete">DELETE</span></td><td><span class="code-inline">/api/documents?public_id=…</span></td><td>Delete a file from Cloudinary.</td></tr>
+            <tr><td><span class="method-badge method-post">POST</span></td><td><span class="code-inline">/api/add-link</span></td><td>Scrape a URL via Tavily and stage its content for ingestion.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <hr class="docs-divider">
+
+    <!-- API Ingestion -->
+    <section class="docs-section" id="api-ingest">
+      <h2 class="docs-h2"><span>🗄️</span> Ingestion &amp; Maintenance</h2>
+      <div class="api-table-wrap">
+        <table class="api-table">
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method-badge method-post">POST</span></td><td><span class="code-inline">/api/ingest</span></td><td>Run the RAG pipeline — indexes staged documents into Pinecone. Modes: <span class="code-inline">all</span> or <span class="code-inline">recent</span>.</td></tr>
+            <tr><td><span class="method-badge method-post">POST</span></td><td><span class="code-inline">/api/cleanup</span></td><td>Manually trigger 24-hour file expiry cleanup (also runs hourly automatically).</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3 class="docs-h3">Document workflow</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number-wrap"><div class="step-number">1</div><div class="step-line"></div></div>
+          <div class="step-body">
+            <p class="step-title">Upload a knowledge document</p>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-block-lang">bash</span><button class="code-copy-btn" onclick="copyCode(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+              <pre><code>curl -X POST http://localhost:8000/api/upload \
+  -F "file=@refund_policy.pdf" \
+  -F "user_id=admin"</code></pre>
+            </div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number-wrap"><div class="step-number">2</div><div class="step-line"></div></div>
+          <div class="step-body">
+            <p class="step-title">Index it into Pinecone</p>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-block-lang">bash</span><button class="code-copy-btn" onclick="copyCode(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+              <pre><code>curl -X POST http://localhost:8000/api/ingest \
+  -H "Content-Type: application/json" \
+  -d '{"mode":"recent","user_id":"admin"}'</code></pre>
+            </div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number-wrap"><div class="step-number">3</div></div>
+          <div class="step-body">
+            <p class="step-title">Query — the agent now knows your document</p>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-block-lang">bash</span><button class="code-copy-btn" onclick="copyCode(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+              <pre><code>curl -X POST http://localhost:8000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message":"What is the refund policy?","user_id":"user-1"}'</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="docs-divider">
+
+    <!-- Usage Examples -->
+    <section class="docs-section" id="usage-examples">
+      <h2 class="docs-h2"><span>💡</span> Example Conversations</h2>
+      <p class="docs-p">Lyraa automatically classifies intent and routes each message to the right pipeline.</p>
+
+      <h3 class="docs-h3">🛒 Order tracking</h3>
+      <div class="convo">
+        <div class="convo-msg"><div class="convo-avatar convo-avatar--user">U</div><div class="convo-bubble">Where is my order ORD-84712?</div></div>
+        <div class="convo-msg convo-msg--agent"><div class="convo-avatar convo-avatar--agent">L</div><div class="convo-bubble">Your order ORD-84712 is currently in transit and is expected to arrive by Thursday, August 7th. You'll receive a tracking email shortly.</div></div>
+      </div>
+
+      <h3 class="docs-h3">📋 Policy questions (RAG)</h3>
+      <div class="convo">
+        <div class="convo-msg"><div class="convo-avatar convo-avatar--user">U</div><div class="convo-bubble">What is your return policy for electronics?</div></div>
+        <div class="convo-msg convo-msg--agent"><div class="convo-avatar convo-avatar--agent">L</div><div class="convo-bubble">Electronics can be returned within 15 days of delivery in original, sealed packaging. Defective items qualify for a full replacement or refund within 30 days.</div></div>
+      </div>
+
+      <h3 class="docs-h3">👋 Smalltalk (instant — zero LLM cost)</h3>
+      <div class="convo">
+        <div class="convo-msg"><div class="convo-avatar convo-avatar--user">U</div><div class="convo-bubble">Thanks so much!</div></div>
+        <div class="convo-msg convo-msg--agent"><div class="convo-avatar convo-avatar--agent">L</div><div class="convo-bubble">Happy to help! Let me know if you need anything else. 😊</div></div>
+      </div>
+
+      <h3 class="docs-h3">🤖 Via MCP tool (Claude, Gemini, OpenCode…)</h3>
+      <div class="code-block">
+        <div class="code-block-header"><span class="code-block-lang">natural language — in your AI chat</span><button class="code-copy-btn" onclick="copyCode(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+        <pre><code><span class="tok-cmt"># Just say to your AI assistant:</span>
+Ask the Lyraa support agent: "Do you offer international shipping?"
+
+<span class="tok-cmt"># It calls: ask_support_agent("Do you offer international shipping?")</span>
+<span class="tok-cmt"># and returns the grounded RAG answer in the chat window.</span></code></pre>
+      </div>
+    </section>
+
+    <hr class="docs-divider">
+
+    <!-- Troubleshooting -->
+    <section class="docs-section" id="troubleshooting">
+      <h2 class="docs-h2"><span>🛠️</span> Troubleshooting</h2>
+
+      <h3 class="docs-h3">ModuleNotFoundError: No module named 'llama_index'</h3>
+      <div class="callout callout--danger">
+        <span class="callout-icon">❌</span>
+        <div class="callout-body">The MCP server is running with a Python interpreter that doesn't have the project dependencies installed. Always point the client config to your virtual environment's Python executable.</div>
+      </div>
+      <div class="code-block">
+        <div class="code-block-header"><span class="code-block-lang">json — correct venv path (Windows)</span><button class="code-copy-btn" onclick="copyCode(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+        <pre><code><span class="tok-str">"command"</span>: <span class="tok-str">"C:\\path\\to\\Lyraa_agent\\.venv\\Scripts\\python.exe"</span></code></pre>
+      </div>
+
+      <h3 class="docs-h3">ImportError: cannot import name 'McpError' / 'FastMCP'</h3>
+      <div class="callout callout--warn"><span class="callout-icon">⚠️</span><div class="callout-body">Version mismatch between <span class="code-inline">fastmcp</span> and <span class="code-inline">mcp</span>. Run <span class="code-inline">uv sync --reinstall</span> to restore locked versions.</div></div>
+
+      <h3 class="docs-h3">Server not appearing in AI client</h3>
+      <ol style="padding-left:1.5rem; font-size:0.9rem; line-height:2.2; color:#333;">
+        <li>Verify the JSON config has no trailing commas.</li>
+        <li>On Windows, use double backslashes in paths (<span class="code-inline">\\</span>).</li>
+        <li>Fully quit and relaunch the AI client after saving config.</li>
+        <li>Test manually: <span class="code-inline">python Back_end/Mcp_server/server.py</span> — should print "Starting Lyraa MCP Server…" with no errors.</li>
+      </ol>
+
+      <h3 class="docs-h3">Pinecone errors on startup</h3>
+      <p class="docs-p">Verify <span class="code-inline">PINECONE_INDEX_NAME</span> matches an existing index in your Pinecone project and <span class="code-inline">PINECONE_ENV</span> matches your region.</p>
+    </section>
+
+  </main>
+
+  <!-- TOC -->
+  <nav class="docs-toc">
+    <p class="toc-label">On this page</p>
+    <a href="#overview"        class="toc-link active">Overview</a>
+    <a href="#installation"    class="toc-link">Installation</a>
+    <a href="#environment"     class="toc-link">Environment Variables</a>
+    <a href="#running"         class="toc-link">Running the Server</a>
+    <a href="#mcp-what"        class="toc-link">What is the MCP Server?</a>
+    <a href="#mcp-connect"     class="toc-link">Connect to a Client</a>
+    <a href="#mcp-clients"     class="toc-link">Supported Clients</a>
+    <a href="#api-chat"        class="toc-link">Chat Endpoints</a>
+    <a href="#api-docs"        class="toc-link">Document Endpoints</a>
+    <a href="#api-ingest"      class="toc-link">Ingestion &amp; Search</a>
+    <a href="#usage-examples"  class="toc-link">Example Conversations</a>
+    <a href="#troubleshooting" class="toc-link">Troubleshooting</a>
+  </nav>
+
+</div><!-- end docs-shell -->
+
+<script>
+  // Copy button
+  function copyCode(btn) {
+    const pre = btn.closest('.code-block').querySelector('pre');
+    navigator.clipboard.writeText(pre.innerText).then(() => {
+      btn.classList.add('copied');
+      btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';
+      }, 2000);
+    });
+  }
+
+  // Client tabs
+  document.querySelectorAll('.client-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.client-tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.client-tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('client-' + btn.dataset.client).classList.add('active');
+    });
+  });
+
+  // Active section highlight
+  const sections = document.querySelectorAll('.docs-section');
+  const sidebarLinks = document.querySelectorAll('.sidebar-link');
+  const tocLinks = document.querySelectorAll('.toc-link');
+
+  new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        sidebarLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + id));
+        tocLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + id));
+      }
+    });
+  }, { rootMargin: '-10% 0px -80% 0px' }).observe
+  // Observe each section
+  ;(function() {
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          const id = e.target.id;
+          sidebarLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + id));
+          tocLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + id));
+        }
+      });
+    }, { rootMargin: '-10% 0px -80% 0px' });
+    sections.forEach(s => obs.observe(s));
+  })();
+</script>
+</body>
+</html>

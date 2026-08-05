@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.14"
 resolution-markers = [
     "sys_platform != 'win32'",
@@ -1811,6 +1811,7 @@ dependencies = [
     { name = "opentelemetry-exporter-otlp-proto-http", marker = "sys_platform != 'win32'" },
     { name = "opentelemetry-sdk", marker = "sys_platform != 'win32'" },
     { name = "pinecone" },
+    { name = "pydantic" },
     { name = "pymupdf" },
     { name = "pytesseract" },
     { name = "requests" },
@@ -1841,6 +1842,7 @@ requires-dist = [
     { name = "opentelemetry-exporter-otlp-proto-http", marker = "sys_platform != 'win32'", specifier = "==1.40.0" },
     { name = "opentelemetry-sdk", marker = "sys_platform != 'win32'", specifier = "==1.40.0" },
     { name = "pinecone", specifier = ">=7.3.0" },
+    { name = "pydantic", specifier = ">=2.13.4" },
     { name = "pymupdf", specifier = ">=1.24.0" },
     { name = "pytesseract", specifier = ">=0.3.13" },
     { name = "requests", specifier = ">=2.34.2" },
