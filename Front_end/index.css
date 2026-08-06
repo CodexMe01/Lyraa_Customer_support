@@ -2156,7 +2156,7 @@ input {
   background: var(--color-off-black);
   color: var(--color-chalk);
   overflow: hidden;
-  padding: 4rem 0 0;
+  padding: 3rem 0 0;
 }
 
 .footer-inner {
@@ -2171,7 +2171,7 @@ input {
   align-items: flex-start;
   justify-content: space-between;
   gap: 2rem;
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
   flex-wrap: wrap;
 }
 
@@ -2269,7 +2269,7 @@ input {
 .footer-divider {
   height: 1px;
   background: rgba(244, 243, 236, 0.1);
-  margin-bottom: 2.5rem;
+  margin-bottom: 0;
 }
 
 /* --- Link columns --- */
@@ -2313,22 +2313,42 @@ input {
   color: var(--color-chalk);
 }
 
-/* Social links (Follow column) */
-.footer-social-list {
+/* Social Follow Section (horizontal, centered) */
+.footer-social-section {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 2rem 0 2.5rem;
+}
+
+.footer-follow-title {
+  text-align: center;
+  margin-bottom: 0.25rem;
+}
+
+.footer-social-list {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25rem 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 .footer-social-item {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  font-size: 0.875rem;
-  color: rgba(244, 243, 236, 0.7);
-  padding: 0.3rem 0;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+  color: rgba(244, 243, 236, 0.6);
+  padding: 0.4rem 0.75rem;
   text-decoration: none;
-  transition: color var(--transition-fast);
+  border-radius: 8px;
+  letter-spacing: 0.01em;
+  transition: color var(--transition-fast), background var(--transition-fast);
 }
 
 .footer-social-item svg {
@@ -2339,6 +2359,7 @@ input {
 
 .footer-social-item:hover {
   color: var(--color-chalk);
+  background: rgba(244, 243, 236, 0.07);
 }
 
 /* --- Giant bleed wordmark (Wavetick signature) --- */
