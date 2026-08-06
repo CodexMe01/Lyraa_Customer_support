@@ -655,7 +655,7 @@
     <div class="modal-overlay" id="ingest-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div class="modal-card">
             <div class="modal-header">
-                <div class="modal-title" id="modal-title">🚀 Start Ingestion Pipeline</div>
+                <div class="modal-title" id="modal-title">Start Ingestion Pipeline</div>
                 <div class="modal-subtitle">Choose which files to process and push to the Pinecone vector store.</div>
             </div>
 
@@ -684,10 +684,7 @@
         </div>
     </div>
 
-    <header>
-        <a href="index.html" class="header-logo" aria-label="Go Home">
-            <div class="logo-icon-wrap">⊞</div>
-            <span>Lyraa Console</span>
+    <header class="docs-header">
         </a>
         <div style="display: flex; align-items: center; gap: 1.5rem;">
             <div class="header-title-badge">
@@ -695,6 +692,7 @@
                 <span id="api-status-text">Connecting to Backend API...</span>
             </div>
             <a href="index.html" class="back-link">← Return to Landing Page</a>
+            <a href="index.html" class="back-link">Docs ↗</a>
         </div>
     </header>
 
@@ -773,14 +771,14 @@
                     <div class="chat-avatar">⊞</div>
                     <div>
                         <div style="font-weight: 600;">Lyraa Support Bot</div>
-                        <div style="font-size: 0.75rem; color: var(--color-text-muted); font-weight: normal;">RAG Agent Powered by Ollama & Pinecone</div>
+                        <div style="font-size: 0.75rem; color: var(--color-text-muted); font-weight: normal;">RAG Agent Powered by @PRG</div>
                     </div>
                 </div>
 
                 <div class="chat-messages" id="chat-box">
                     <div class="chat-msg bot">
                         <div class="msg-bubble">
-                            Hi! I am the Lyraa support assistant. I use Google Gemini embeddings to search our knowledge base in Pinecone, and Ollama to generate answers. Go ahead and query my RAG system!
+                            Hi! I am the Lyraa support assistant. Drop your query here..
                         </div>
                     </div>
                 </div>
