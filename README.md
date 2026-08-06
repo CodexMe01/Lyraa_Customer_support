@@ -57,37 +57,37 @@ Designed as a full-stack solution, Lyraa ships with:
 └───────────────────────────────┬─────────────────────────────────┘
                                 │ HTTP / SSE
 ┌───────────────────────────────▼─────────────────────────────────┐
-│                      FastAPI Backend                             │
-│                                                                  │
+│                      FastAPI Backend                            │
+│                                                                 │
 │  ┌──────────────────────────────────────────────────────────┐   │
-│  │                   Intent Classifier                       │   │
+│  │                   Intent Classifier                      │   │
 │  │   smalltalk → instant reply  (zero LLM cost)             │   │
 │  │   general_query → RAG pipeline                           │   │
 │  │   order_query   → Order Status Tool                      │   │
 │  │   ambiguous     → ReAct Agent (full reasoning loop)      │   │
 │  └──────────────────────┬───────────────────────────────────┘   │
-│                          │                                       │
-│  ┌──────────────┐  ┌─────▼────────┐  ┌─────────────────────┐   │
-│  │  RAG Engine  │  │  ReAct Agent │  │   Order Status Tool  │   │
-│  │  (LlamaIndex)│  │  (LlamaIndex)│  │   Escalation Tool    │   │
-│  └──────┬───────┘  └──────────────┘  └──────────┬──────────┘   │
-│         │                                         │              │
-│  ┌──────▼───────┐                        ┌────────▼──────────┐  │
-│  │   Pinecone   │                        │   Slack Notifier   │  │
-│  │ Vector Store │                        │  (Human Escalation)│  │
-│  └──────────────┘                        └───────────────────┘  │
+│                          │                                      │
+│  ┌──────────────┐  ┌─────▼────────┐  ┌─────────────────────┐    │
+│  │  RAG Engine  │  │  ReAct Agent │  │   Order Status Tool │    │
+│  │  (LlamaIndex)│  │  (LlamaIndex)│  │   Escalation Tool   │    │
+│  └──────┬───────┘  └──────────────┘  └──────────┬──────────┘    │
+│         │                                         │             │
+│  ┌──────▼───────┐                        ┌────────▼──────────┐   │
+│  │   Pinecone   │                        │   Slack Notifier  │   │
+│  │ Vector Store │                        │  (Human Escalation) │ │
+│  └──────────────┘                        └───────────────────┘   │
 │                                                                  │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │              Ingestion Pipeline                            │  │
-│  │  PDF / DOCX / CSV / Images / Web URLs                     │  │
-│  │  OCR → Semantic Chunking → Google GenAI Embeddings        │  │
-│  │  → Pinecone Upsert                                        │  │
-│  └───────────────────────────────────────────────────────────┘  │
+│  ┌───────────────────────────────────────────────────────────┐   │
+│  │              Ingestion Pipeline                           │   │
+│  │  PDF / DOCX / CSV / Images / Web URLs                     │   │
+│  │  OCR → Semantic Chunking → Google GenAI Embeddings        │   │
+│  │  → Pinecone Upsert                                        │   │
+│  └───────────────────────────────────────────────────────────┘   │
 └──────────────────────────────────────────────────────────────────┘
                                 │
 ┌───────────────────────────────▼─────────────────────────────────┐
-│                      MCP Server (FastMCP)                        │
-│              ask_support_agent(query, user_id)                   │
+│                      MCP Server (FastMCP)                       │
+│              ask_support_agent(query, user_id)                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -438,6 +438,6 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 <div align="center">
 
-Built with ❤️ using LlamaIndex · FastAPI · Groq · Pinecone · Cohere
+Built with ❤️ by [@PRG](https://prg-portfolio.vercel.app/)
 
 </div>
