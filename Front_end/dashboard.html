@@ -92,6 +92,12 @@
             color: var(--color-text-muted);
         }
 
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
         .status-dot {
             width: 8px;
             height: 8px;
@@ -310,6 +316,7 @@
         .table-wrap {
             max-height: 250px;
             overflow-y: auto;
+            overflow-x: auto;
             border: 1px solid var(--color-border);
             border-radius: 8px;
             background: #fff;
@@ -531,6 +538,48 @@
             }
         }
 
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+                align-items: center;
+            }
+            .header-right {
+                flex-direction: column;
+                gap: 0.75rem;
+                width: 100%;
+                align-items: center;
+            }
+            .header-title-badge {
+                width: max-content;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .main-container {
+                padding: 1rem;
+                gap: 1rem;
+            }
+            .panel-card {
+                padding: 1rem;
+                gap: 1rem;
+            }
+            .url-input-group {
+                flex-direction: column;
+            }
+            .url-input-group .btn {
+                width: 100%;
+            }
+            .chat-input-area {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            .chat-input-area .btn {
+                width: 100%;
+            }
+        }
+
         /* INGEST MODE MODAL */
         .modal-overlay {
             position: fixed;
@@ -684,15 +733,18 @@
         </div>
     </div>
 
-    <header class="docs-header">
+    <header>
+        <a href="index.html" class="header-logo">
+            <div class="logo-icon-wrap">⊞</div>
+            <span>Lyraa Console</span>
         </a>
-        <div style="display: flex; align-items: center; gap: 1.5rem;">
+        <div class="header-right">
             <div class="header-title-badge">
                 <span class="status-dot" id="api-status-dot"></span>
                 <span id="api-status-text">Connecting to Backend API...</span>
             </div>
             <a href="index.html" class="back-link">← Return to Landing Page</a>
-            <a href="index.html" class="back-link">Docs ↗</a>
+            <a href="docs.html" class="back-link">Docs ↗</a>
         </div>
     </header>
 

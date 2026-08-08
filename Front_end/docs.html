@@ -21,7 +21,7 @@
 
     .docs-shell {
       display: grid;
-      grid-template-columns: var(--docs-sidebar-width) 1fr var(--docs-toc-width);
+      grid-template-columns: var(--docs-sidebar-width) minmax(0, 1fr) var(--docs-toc-width);
       grid-template-areas: "header header header" "sidebar content toc";
       min-height: 100vh;
     }
@@ -266,7 +266,7 @@
     @media (max-width: 1200px) {
       .docs-toc { display: none; }
       .docs-shell {
-        grid-template-columns: var(--docs-sidebar-width) 1fr;
+        grid-template-columns: var(--docs-sidebar-width) minmax(0, 1fr);
         grid-template-areas: "header header" "sidebar content";
       }
     }
@@ -284,7 +284,7 @@
       .mobile-sidebar-overlay { display: block; }
 
       .docs-shell {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
         grid-template-areas: "header" "content";
       }
       .docs-sidebar {
