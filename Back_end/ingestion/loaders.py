@@ -5,7 +5,7 @@ import sys
 import time
 from llama_index.core import SimpleDirectoryReader, Document, VectorStoreIndex, Settings
 from tavily import TavilyClient
-import fitz
+import pymupdf
 import pytesseract
 from PIL import Image
 
@@ -107,7 +107,7 @@ def load_pdf_with_ocr(file_path: str, category: str, source_name: str) -> list[D
     """
     docs = []
     try:
-        pdf = fitz.open(file_path)
+        pdf = pymupdf.open(file_path)
     except Exception as e:
         print(f"Error opening PDF {file_path}: {e}")
         return []
