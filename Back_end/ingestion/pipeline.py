@@ -43,81 +43,86 @@ def build_splitter(embed_model) -> SemanticSplitterNodeParser:
         sub_node_parsers=[fallback],
     )
 
-def create_or_update_index(documents: list[Document], collection_name: str = "lyraa-support"):
+def create_or_update_index(documents: list[Document], tenant_id: str) -> VectorStoreIndex | None:
     """
-    Ingest documents into Pinecone and create/update a VectorStoreIndex.
+    Ingest *documents* into Pinecone under the namespace ``tenant_<tenant_id>``.
+
+    Each tenant's vectors are fully isolated from one another via Pinecone
+    namespaces.  The shared index name is taken from PINECONE_INDEX_NAME.
     """
     if not documents:
         print("No documents to ingest.")
         return None
-    
+
     google_api_key = os.getenv("GOOGLE_API_KEY")
     embedding_model = GoogleGenAIEmbedding(model_name=EMBED_MODEL, api_key=google_api_key)
     Settings.embed_model = embedding_model
 
-    # Initialize Pinecone client
+    # ── Pinecone setup ─────────────────────────────────────────────────────────
     api_key = os.getenv("PINECONE_API_KEY")
     if not api_key:
         raise ValueError("PINECONE_API_KEY environment variable is not set. Please set it in .env.")
-        
-    index_name = os.getenv("PINECONE_INDEX_NAME", collection_name)
-    # Pinecone indexes must be lowercase, numbers, and hyphens only
+
+    index_name = os.getenv("PINECONE_INDEX_NAME", "lyraa-support")
     index_name = index_name.lower().replace("_", "-")
-    
+
     pc = Pinecone(api_key=api_key)
-    
-    # Check if index exists, create if not
+
     existing_indexes = [idx.name for idx in pc.list_indexes()]
     if index_name not in existing_indexes:
-        # Determine embedding dimension
         dimension = len(embedding_model.get_text_embedding("test"))
         print(f"Creating Pinecone index '{index_name}' with dimension {dimension}...")
         pc.create_index(
             name=index_name,
             dimension=dimension,
             metric="cosine",
-            spec=ServerlessSpec(cloud="aws", region="us-east-1")
+            spec=ServerlessSpec(cloud="aws", region="us-east-1"),
         )
     else:
         print(f"Index '{index_name}' already exists. Connecting...")
-        
+
     pinecone_index = pc.Index(index_name)
-    
-    # Assign pinecone as the vector store
-    vector_store = PineconeVectorStore(pinecone_index=pinecone_index)
-    storage_context = StorageContext.from_defaults(vector_store=vector_store)
-    
-    # Build the index
-    index = VectorStoreIndex.from_documents(
-        documents, storage_context=storage_context
+
+    # ── Tenant-scoped namespace ────────────────────────────────────────────────
+    namespace = f"tenant_{tenant_id}"
+    print(f"[Ingest] Using Pinecone namespace '{namespace}' for tenant '{tenant_id}'.")
+
+    vector_store = PineconeVectorStore(
+        pinecone_index=pinecone_index,
+        namespace=namespace,
     )
-    
+    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+
+    index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
     return index
 
 def run_ingestion_pipeline(
     data_dir: str = "./data",
     mode: str = "all",
     storage: Optional[CloudinaryStorage] = None,
-    user_id: str = "anonymous",
+    tenant_id: str = "anonymous",
+    tenant_slug: str = "anonymous",
 ):
-    """Run the ingestion pipeline for both local files and Cloudinary-backed uploads.
+    """
+    Run the ingestion pipeline for both local files and Cloudinary-backed uploads.
 
     Args:
-        data_dir: Local staging directory used as a fallback.
-        mode: 'all' to process every file, 'recent' to process only files
-              modified in the last 24 hours.
-        storage: Cloudinary storage client used to fetch uploaded assets.
-        user_id: User scope for Cloudinary-backed documents.
+        data_dir:    Local staging directory used as a fallback.
+        mode:        'all' to process every file, 'recent' for last-24h only.
+        storage:     Cloudinary storage client (optional override for testing).
+        tenant_id:   Tenant UUID — used as the Pinecone namespace key.
+        tenant_slug: Tenant slug — used as the Cloudinary folder prefix.
     """
-    print(f"Loading documents (mode={mode})...")
+    print(f"[Ingest] Loading documents (mode={mode}, tenant={tenant_id})...")
 
     storage_client = storage or CloudinaryStorage()
     docs = []
 
+    # ── Fetch from Cloudinary (tenant-prefixed folder) ─────────────────────────
     try:
-        cloud_documents = storage_client.list_files(user_id=user_id)
+        cloud_documents = storage_client.list_files(user_id=tenant_slug)
         if cloud_documents:
-            print(f"Found {len(cloud_documents)} Cloudinary document(s) for user '{user_id}'.")
+            print(f"[Ingest] Found {len(cloud_documents)} Cloudinary document(s) for tenant '{tenant_slug}'.")
             for asset in cloud_documents:
                 public_id = asset.get("public_id")
                 resource_type = asset.get("resource_type", "raw")
@@ -125,8 +130,8 @@ def run_ingestion_pipeline(
                     continue
                 try:
                     file_bytes = storage_client.download_file(public_id, resource_type=resource_type)
-                except Exception as exc:  # pragma: no cover - defensive logging
-                    print(f"Skipping Cloudinary asset {public_id}: {exc}")
+                except Exception as exc:
+                    print(f"[Ingest] Skipping Cloudinary asset {public_id}: {exc}")
                     continue
 
                 filename = asset.get("filename") or public_id.split("/")[-1]
@@ -134,18 +139,19 @@ def run_ingestion_pipeline(
                     continue
                 docs.extend(load_documents_from_bytes(file_bytes, filename, mode=mode))
     except Exception as exc:
-        print(f"Cloudinary ingestion unavailable: {exc}")
+        print(f"[Ingest] Cloudinary ingestion unavailable: {exc}")
 
+    # ── Fallback: local staging dir ────────────────────────────────────────────
     if not docs:
         docs = load_local_documents(data_dir, mode=mode)
 
     if docs:
-        print(f"Loaded {len(docs)} documents. Building index...")
-        index = create_or_update_index(docs)
-        print("Ingestion complete.")
+        print(f"[Ingest] Loaded {len(docs)} documents. Building index for tenant '{tenant_id}'...")
+        index = create_or_update_index(docs, tenant_id=tenant_id)
+        print("[Ingest] Ingestion complete.")
         return index
 
-    print("Ingestion skipped - no data.")
+    print("[Ingest] Skipped — no data found.")
     return None
 
 
