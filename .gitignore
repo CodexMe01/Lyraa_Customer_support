@@ -1,3 +1,38 @@
+# Environment variables
 .env
-lyraenv
+.venv
+
+# Python virtual environment
 Back_end/.venv
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# IDE settings
+.idea/
+.vscode/
+
+# Database files
+*.db
+*.sqlite
+
+# Logs
+logs/
+*.log
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+
+# implementation plans
+implementation_plan.md
+multi_tenant_discussion.md
+implementation_plan2.md
+implementation_plan2

@@ -32,4 +32,9 @@ dependencies = [
     "opentelemetry-exporter-otlp-proto-grpc==1.40.0 ; sys_platform != 'win32'",
     "opentelemetry-exporter-otlp-proto-http==1.40.0 ; sys_platform != 'win32'",
     "pydantic>=2.13.4",
+    "supabase>=2.0.0",
+    "python-jose[cryptography]>=3.3.0",
+    "bcrypt>=4.0.0",
+    "sqlalchemy[asyncio]>=2.0.0",
+    "asyncpg>=0.29.0",
 ]

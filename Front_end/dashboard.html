@@ -1,27 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RAG Developer Playground & Console</title>
+    <title>Lyraa Admin Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --color-bg: #f4f3ec; /* Cream background matching index */
-            --color-surface: #faf9f6; /* Off-white surface matching index */
+            --color-bg: #f4f3ec;
+            --color-surface: #faf9f6;
             --color-border: rgba(0, 0, 0, 0.08);
-            --color-text-main: #111111; /* Off-black main text */
-            --color-text-muted: #5a5a5a; /* Gray text matching index */
-            --color-primary: #000ce1; /* Intercom Blue matching index */
-            --color-primary-glow: rgba(0, 12, 225, 0.12);
-            --color-accent: #ff5600; /* Intercom Orange matching index */
-            --color-accent-glow: rgba(255, 86, 0, 0.12);
+            --color-text-main: #111111;
+            --color-text-muted: #5a5a5a;
+            --color-primary: #000ce1;
             --color-danger: #ef4444;
-            --color-console-bg: #0d1117; /* Slate dark background for developer console */
             --font-main: 'Inter', sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
+            --sidebar-width: 260px;
         }
 
         * {
@@ -36,827 +39,529 @@
             font-family: var(--font-main);
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
             overflow-x: hidden;
-            background-image: radial-gradient(circle at 10% 20%, rgba(0, 12, 225, 0.02) 0%, transparent 40%),
-                              radial-gradient(circle at 90% 80%, rgba(255, 86, 0, 0.01) 0%, transparent 40%);
         }
 
-        header {
-            border-bottom: 1px solid var(--color-border);
-            padding: 1.25rem 2rem;
-            backdrop-filter: blur(12px);
-            background: rgba(244, 243, 236, 0.85);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .header-logo {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            text-decoration: none;
-            color: #000;
-            font-weight: 700;
-            font-size: 1.25rem;
-            letter-spacing: -0.025em;
-        }
-
-        .logo-icon-wrap {
-            background: #000;
-            color: #fff;
-            width: 2rem;
-            height: 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
-            font-weight: 800;
-            font-size: 1.15rem;
-        }
-
-        .header-title-badge {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: rgba(0, 0, 0, 0.03);
-            border: 1px solid var(--color-border);
-            padding: 0.35rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            color: var(--color-text-muted);
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background-color: var(--color-danger);
-            box-shadow: 0 0 8px var(--color-danger);
-            display: inline-block;
-            transition: background-color 0.3s, box-shadow 0.3s;
-        }
-
-        .status-dot.connected {
-            background-color: #00da00; /* Intercom Green */
-            box-shadow: 0 0 10px #00da00;
-        }
-
-        .back-link {
-            color: var(--color-text-muted);
-            text-decoration: none;
-            font-size: 0.9rem;
-            transition: color 0.2s;
-        }
-
-        .back-link:hover {
-            color: #000;
-        }
-
-        .main-container {
-            flex: 1;
-            display: grid;
-            grid-template-columns: 45% 55%;
-            gap: 2rem;
-            padding: 2rem;
-            max-width: 1600px;
-            margin: 0 auto;
-            width: 100%;
-        }
-
-        /* CARD STYLES */
-        .panel-card {
+        /* SIDEBAR */
+        .sidebar {
+            width: var(--sidebar-width);
             background: var(--color-surface);
-            border: 1px solid rgba(0, 0, 0, 0.12);
-            border-radius: 12px;
-            padding: 1.75rem;
+            border-right: 1px solid var(--color-border);
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
             display: flex;
             flex-direction: column;
-            gap: 1.5rem;
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.02);
+            z-index: 100;
         }
 
-        .panel-title {
-            font-size: 1.15rem;
-            font-weight: 600;
-            letter-spacing: -0.01em;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: #000;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-            padding-bottom: 0.75rem;
-        }
-
-        .panel-section {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .section-label {
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: var(--color-text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        /* FORM CONTROLS */
-        .url-input-group {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .text-input {
-            flex: 1;
-            background: #fff;
-            border: 1px solid rgba(0, 0, 0, 0.12);
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
-            color: #000;
-            font-family: var(--font-main);
-            font-size: 0.9rem;
-            outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-
-        .text-input:focus {
-            border-color: var(--color-primary);
-            box-shadow: 0 0 0 3px var(--color-primary-glow);
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-family: var(--font-main);
-            font-weight: 500;
-            text-decoration: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-            padding: 0.75rem 1.25rem;
-            font-size: 0.9rem;
-            border: 1px solid #020917;
-            background: #020917; /* Navy button matching index */
-            color: #f4f3ec; /* Cream text */
-            gap: 0.5rem;
-        }
-
-        .btn:hover {
-            background: #f4f3ec;
-            color: #020917;
-            border-color: #020917;
-        }
-
-        .btn:active {
-            transform: scale(0.98);
-        }
-
-        .btn-secondary {
-            background: transparent;
-            color: #020917;
-            border: 1px solid #020917;
-        }
-
-        .btn-secondary:hover {
-            background: #020917;
-            color: #f4f3ec;
-        }
-
-        .btn-danger {
-            background: var(--color-danger);
-            border: 1px solid var(--color-danger);
-            color: #fff;
-        }
-
-        .btn-danger:hover {
-            background: #dc2626;
-            border-color: #dc2626;
-        }
-
-        .btn-accent {
-            background: #000;
-            border: 1px solid #000;
-            color: #fff;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        }
-
-        .btn-accent:hover {
-            background: #faf9f6;
-            color: #000;
-            border-color: #000;
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
-        }
-
-        .btn-full {
-            width: 100%;
-            padding: 1rem;
-            font-size: 1rem;
-        }
-
-        /* FILE UPLOADER */
-        .upload-dropzone {
-            border: 2px dashed rgba(0, 0, 0, 0.15);
-            border-radius: 8px;
+        .sidebar-header {
             padding: 1.5rem;
-            text-align: center;
-            background: rgba(0, 0, 0, 0.01);
-            cursor: pointer;
-            transition: border-color 0.2s, background-color 0.2s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .upload-dropzone:hover {
-            border-color: var(--color-primary);
-            background-color: rgba(0, 12, 225, 0.02);
-        }
-
-        .upload-icon {
-            font-size: 1.75rem;
-            color: var(--color-text-muted);
-        }
-
-        .upload-text {
-            font-size: 0.85rem;
-            color: var(--color-text-muted);
-        }
-
-        .upload-text strong {
-            color: var(--color-primary);
-        }
-
-        .file-selected-area {
-            display: none;
-            align-items: center;
-            justify-content: space-between;
-            background: rgba(0, 12, 225, 0.05);
-            border: 1px solid rgba(0, 12, 225, 0.15);
-            padding: 0.65rem 1rem;
-            border-radius: 8px;
-            font-size: 0.85rem;
-        }
-
-        /* DOCUMENT TABLE */
-        .table-wrap {
-            max-height: 250px;
-            overflow-y: auto;
-            overflow-x: auto;
-            border: 1px solid var(--color-border);
-            border-radius: 8px;
-            background: #fff;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-            text-align: left;
-        }
-
-        th {
-            background: rgba(0, 0, 0, 0.02);
-            padding: 0.75rem 1rem;
-            font-weight: 600;
-            color: var(--color-text-muted);
             border-bottom: 1px solid var(--color-border);
         }
 
-        td {
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.02);
+        .sidebar-logo {
+            font-size: 1.25rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .sidebar-logo-icon {
+            background: #000;
+            color: #fff;
+            width: 1.75rem;
+            height: 1.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+        }
+
+        .tenant-selector {
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            color: var(--color-text-muted);
+            background: rgba(0, 0, 0, 0.03);
+            padding: 0.5rem;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 200px;
-            color: #000;
         }
 
-        tr:hover td {
-            background: rgba(0, 0, 0, 0.01);
-        }
-
-        .action-icon-btn {
-            background: transparent;
-            border: none;
-            color: var(--color-text-muted);
-            cursor: pointer;
-            transition: color 0.2s;
-            font-size: 1rem;
-        }
-
-        .action-icon-btn:hover {
-            color: var(--color-danger);
-        }
-
-        .empty-table-msg {
-            padding: 1.5rem;
-            text-align: center;
-            color: var(--color-text-muted);
-            font-style: italic;
-        }
-
-        /* PLAYGROUND - CHAT WINDOW */
-        .chat-widget {
-            border: 1px solid var(--color-border);
-            border-radius: 10px;
-            background: #fff;
+        .sidebar-nav {
+            flex: 1;
+            padding: 1rem;
             display: flex;
             flex-direction: column;
-            height: 400px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+            gap: 0.25rem;
+            overflow-y: auto;
         }
 
-        .chat-header {
-            padding: 0.75rem 1rem;
-            background: rgba(0, 0, 0, 0.02);
-            border-bottom: 1px solid var(--color-border);
+        .nav-item {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: var(--color-text-muted);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: rgba(0, 0, 0, 0.04);
+            color: var(--color-text-main);
+        }
+
+        .sidebar-footer {
+            padding: 1rem;
+            border-top: 1px solid var(--color-border);
+        }
+
+        .logout-btn {
+            width: 100%;
+            background: transparent;
+            border: 1px solid var(--color-border);
+            padding: 0.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(0, 0, 0, 0.04);
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 2rem;
+            max-width: 1200px;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .page-section {
+            display: none;
+        }
+
+        .page-section.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* CARDS & FORMS */
+        .card {
+            background: #fff;
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--color-text-muted);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.6rem 0.75rem;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            font-family: inherit;
             font-size: 0.9rem;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+        }
+
+        textarea.form-input {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        /* STATS GRID */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: #fff;
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--color-border);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--color-text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
             font-weight: 600;
         }
 
-        .chat-avatar {
-            width: 24px;
-            height: 24px;
-            background: #000;
-            color: #fff;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8rem;
-            font-weight: 700;
-        }
-
-        .chat-messages {
-            flex: 1;
-            padding: 1.25rem;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .chat-msg {
-            display: flex;
-            gap: 0.75rem;
-            max-width: 85%;
-        }
-
-        .chat-msg.bot {
-            align-self: flex-start;
-        }
-
-        .chat-msg.user {
-            align-self: flex-end;
-            flex-direction: row-reverse;
-        }
-
-        .msg-bubble {
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
+        /* TABLE */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
             font-size: 0.9rem;
-            line-height: 1.4;
         }
 
-        .bot .msg-bubble {
-            background: #f1eee9; /* Chalk color from index */
-            color: #000;
-            border: 1px solid var(--color-border);
+        .data-table th,
+        .data-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--color-border);
         }
 
-        .user .msg-bubble {
-            background: var(--color-primary);
-            color: #fff;
+        .data-table th {
+            background: rgba(0, 0, 0, 0.02);
+            font-weight: 500;
+            color: var(--color-text-muted);
         }
 
-        .typing-indicator {
-            display: none;
-            align-self: flex-start;
-            background: rgba(0, 0, 0, 0.03);
-            border: 1px solid var(--color-border);
-            padding: 0.6rem 1rem;
+        /* UPLOAD */
+        .upload-area {
+            border: 2px dashed var(--color-border);
             border-radius: 8px;
-            gap: 4px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 1rem;
+            transition: all 0.2s;
         }
 
-        .typing-indicator span {
-            width: 6px;
-            height: 6px;
-            background: var(--color-text-muted);
-            border-radius: 50%;
+        .upload-area:hover {
+            border-color: var(--color-primary);
+            background: rgba(0, 12, 225, 0.02);
+        }
+
+        .badge {
             display: inline-block;
-            animation: bounce 1.4s infinite ease-in-out both;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: rgba(0, 0, 0, 0.05);
         }
 
-        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
-        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
-
-        @keyframes bounce {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1.0); }
-        }
-
-        .chat-input-area {
-            border-top: 1px solid var(--color-border);
-            padding: 0.75rem;
-            display: flex;
-            gap: 0.5rem;
-            background: rgba(0, 0, 0, 0.01);
-            border-radius: 0 0 10px 10px;
-        }
-
-        /* CONSOLE OUTPUT */
-        .console-widget {
-            font-family: var(--font-mono);
-            background: var(--color-console-bg);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            padding: 1rem;
-            font-size: 0.8rem;
-            color: #10b981;
-            height: 180px;
-            overflow-y: auto;
-            line-height: 1.5;
-            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.8);
-        }
-
-        .console-line {
-            margin-bottom: 0.25rem;
-            white-space: pre-wrap;
-        }
-
-        .console-line.error {
-            color: var(--color-danger);
-        }
-
-        .console-line.info {
-            color: #9ca3af;
-        }
-
-        .console-line.system {
-            color: #3b82f6;
-        }
-
-        /* Scrollbar styles */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(0, 0, 0, 0.15);
-            border-radius: 3px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(0, 0, 0, 0.3);
-        }
-
-        @media (max-width: 1024px) {
-            .main-container {
-                grid-template-columns: 100%;
-            }
-        }
-
-        @media (max-width: 768px) {
-            header {
-                flex-direction: column;
-                gap: 1rem;
-                padding: 1rem;
-                align-items: center;
-            }
-            .header-right {
-                flex-direction: column;
-                gap: 0.75rem;
-                width: 100%;
-                align-items: center;
-            }
-            .header-title-badge {
-                width: max-content;
-            }
-        }
-
-        @media (max-width: 640px) {
-            .main-container {
-                padding: 1rem;
-                gap: 1rem;
-            }
-            .panel-card {
-                padding: 1rem;
-                gap: 1rem;
-            }
-            .url-input-group {
-                flex-direction: column;
-            }
-            .url-input-group .btn {
-                width: 100%;
-            }
-            .chat-input-area {
-                flex-direction: column;
-                gap: 0.75rem;
-            }
-            .chat-input-area .btn {
-                width: 100%;
-            }
-        }
-
-        /* INGEST MODE MODAL */
-        .modal-overlay {
+        /* OVERLAYS */
+        .loading-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.45);
-            backdrop-filter: blur(4px);
-            z-index: 1000;
+            background: rgba(255, 255, 255, 0.8);
+            z-index: 9999;
             display: flex;
             align-items: center;
             justify-content: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.25s ease;
-        }
-
-        .modal-overlay.visible {
-            opacity: 1;
-            pointer-events: all;
-        }
-
-        .modal-card {
-            background: var(--color-surface);
-            border: 1px solid rgba(0, 0, 0, 0.12);
-            border-radius: 16px;
-            padding: 2rem;
-            width: 100%;
-            max-width: 480px;
-            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.15);
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-            transform: translateY(12px);
-            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .modal-overlay.visible .modal-card {
-            transform: translateY(0);
-        }
-
-        .modal-header {
-            display: flex;
-            flex-direction: column;
-            gap: 0.35rem;
-        }
-
-        .modal-title {
             font-size: 1.2rem;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-            color: #000;
+            font-weight: 500;
         }
 
-        .modal-subtitle {
-            font-size: 0.875rem;
-            color: var(--color-text-muted);
-            line-height: 1.5;
-        }
-
-        .modal-options {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .ingest-option {
-            border: 2px solid rgba(0, 0, 0, 0.1);
-            border-radius: 10px;
-            padding: 1rem 1.25rem;
-            cursor: pointer;
-            transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
-            display: flex;
-            align-items: flex-start;
-            gap: 1rem;
-            background: #fff;
-        }
-
-        .ingest-option:hover {
-            border-color: var(--color-primary);
-            box-shadow: 0 0 0 3px var(--color-primary-glow);
-        }
-
-        .ingest-option.selected {
-            border-color: var(--color-primary);
-            background: rgba(0, 12, 225, 0.03);
-            box-shadow: 0 0 0 3px var(--color-primary-glow);
-        }
-
-        .option-icon {
-            font-size: 1.75rem;
-            flex-shrink: 0;
-            line-height: 1;
-        }
-
-        .option-content {
-            display: flex;
-            flex-direction: column;
-            gap: 0.2rem;
-        }
-
-        .option-title {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: #000;
-        }
-
-        .option-desc {
-            font-size: 0.8rem;
-            color: var(--color-text-muted);
-            line-height: 1.45;
-        }
-
-        .modal-actions {
-            display: flex;
-            gap: 0.75rem;
-            justify-content: flex-end;
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
+
 <body>
 
-    <!-- INGEST MODE SELECTION MODAL -->
-    <div class="modal-overlay" id="ingest-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-        <div class="modal-card">
-            <div class="modal-header">
-                <div class="modal-title" id="modal-title">Start Ingestion Pipeline</div>
-                <div class="modal-subtitle">Choose which files to process and push to the Pinecone vector store.</div>
+    <div class="loading-overlay" id="loadingOverlay">Loading Dashboard...</div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-icon">⊞</div>
+                Lyraa
             </div>
-
-            <div class="modal-options">
-                <div class="ingest-option selected" id="opt-all" data-mode="all">
-                    <span class="option-icon">📚</span>
-                    <div class="option-content">
-                        <div class="option-title">Ingest All Files</div>
-                        <div class="option-desc">Reprocess and re-embed every file currently in the data directory. Best for a full knowledge base rebuild.</div>
-                    </div>
-                </div>
-
-                <div class="ingest-option" id="opt-recent" data-mode="recent">
-                    <span class="option-icon">⚡</span>
-                    <div class="option-content">
-                        <div class="option-title">Recent Files Only</div>
-                        <div class="option-desc">Only process files added or modified in the last 24 hours. Faster incremental sync for new documents.</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal-actions">
-                <button id="modal-cancel-btn" class="btn btn-secondary">Cancel</button>
-                <button id="modal-confirm-btn" class="btn">▶ Begin Ingestion</button>
+            <div class="tenant-selector" id="tenantSelector">
+                Loading workspace...
             </div>
         </div>
-    </div>
-
-    <header>
-        <a href="index.html" class="header-logo">
-            <div class="logo-icon-wrap">⊞</div>
-            <span>Lyraa Console</span>
-        </a>
-        <div class="header-right">
-            <div class="header-title-badge">
-                <span class="status-dot" id="api-status-dot"></span>
-                <span id="api-status-text">Connecting to Backend API...</span>
-            </div>
-            <a href="index.html" class="back-link">← Return to Landing Page</a>
-            <a href="docs.html" class="back-link">Docs ↗</a>
+        <nav class="sidebar-nav">
+            <div class="nav-item active" data-target="overview">📊 Overview</div>
+            <div class="nav-item" data-target="knowledge">📚 Knowledge Base</div>
+            <div class="nav-item" data-target="persona">🤖 Agent Persona</div>
+            <div class="nav-item" data-target="apikeys">🔑 API Keys</div>
+            <div class="nav-item" data-target="analytics">📈 Analytics</div>
+            <div class="nav-item" data-target="settings">⚙️ Settings</div>
+        </nav>
+        <div class="sidebar-footer">
+            <button class="logout-btn" id="logoutBtn">Sign Out</button>
         </div>
-    </header>
+    </aside>
 
-    <main class="main-container">
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
 
-        <!-- LEFT PANEL: DOCUMENT MANAGEMENT -->
-        <div class="panel-card">
-            <h2 class="panel-title">🗂️ Document Control Center</h2>
-
-            <!-- Add Web Link Section -->
-            <div class="panel-section">
-                <span class="section-label">1. Web Page Scraper (Tavily)</span>
-                <div class="url-input-group">
-                    <input type="url" id="web-url-input" class="text-input" placeholder="https://example.com/documentation">
-                    <button id="add-url-btn" class="btn">Extract</button>
+        <!-- OVERVIEW SECTION -->
+        <section id="overview" class="page-section active">
+            <div class="page-header">
+                <h1 class="page-title">Overview</h1>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Messages Today</div>
+                    <div class="stat-value" id="statMsgToday">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Messages This Month</div>
+                    <div class="stat-value" id="statMsgMonth">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Documents Indexed</div>
+                    <div class="stat-value" id="statDocs">-</div>
                 </div>
             </div>
+            <div class="card">
+                <h2 class="card-title">Billing & Usage</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <div>Current Plan: <strong id="planName">Free</strong></div>
+                    <button class="btn btn-outline" onclick="alert('Stripe integration pending')">Upgrade Plan</button>
+                </div>
+                <div style="background: var(--color-bg); height: 8px; border-radius: 4px; overflow: hidden;">
+                    <div id="usageBar" style="background: var(--color-primary); height: 100%; width: 0%;"></div>
+                </div>
+                <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--color-text-muted); text-align: right;">
+                    <span id="usageText">0 / 1000 messages used</span>
+                </div>
+            </div>
+        </section>
 
-            <!-- Upload File Section -->
-            <div class="panel-section">
-                <span class="section-label">2. Upload Documents (PDF, Images, DOCX, TXT)</span>
-                <form id="file-upload-form" style="display: flex; flex-direction: column; gap: 0.75rem;">
-                    <div class="upload-dropzone" id="dropzone">
-                        <span class="upload-icon">📥</span>
-                        <span class="upload-text">Drag & drop files or <strong>browse files</strong></span>
-                        <input type="file" id="file-input" style="display: none;" accept=".pdf,.png,.jpg,.jpeg,.bmp,.tiff,.txt,.docx,.md,.html">
-                    </div>
-                    
-                    <div class="file-selected-area" id="file-info-bar">
-                        <span id="selected-file-name" style="font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 75%;">No file selected</span>
-                        <button type="button" id="clear-file-btn" class="action-icon-btn" style="font-size: 0.85rem;">✖ Remove</button>
-                    </div>
+        <!-- KNOWLEDGE BASE SECTION -->
+        <section id="knowledge" class="page-section">
+            <div class="page-header">
+                <h1 class="page-title">Knowledge Base</h1>
+                <button class="btn btn-dark" id="triggerIngestBtn">Sync & Ingest</button>
+            </div>
+            <div class="card">
+                <h2 class="card-title">Add Web Content</h2>
+                <div style="display: flex; gap: 1rem;">
+                    <input type="url" id="webUrlInput" class="form-input" placeholder="https://example.com/docs">
+                    <button class="btn btn-dark" id="addUrlBtn" style="white-space: nowrap;">Scrape & Add</button>
+                </div>
+            </div>
+            <div class="card">
+                <h2 class="card-title">Upload Documents</h2>
+                <div class="upload-area" id="dropzone">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">📥</div>
+                    <div>Drag & drop files here, or <strong>click to browse</strong></div>
+                    <div style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 0.5rem;">Supports PDF,
+                        DOCX, TXT, Images</div>
+                    <input type="file" id="fileInput" style="display: none;"
+                        accept=".pdf,.png,.jpg,.jpeg,.txt,.docx,.md">
+                </div>
+                <div id="uploadStatus" style="font-size: 0.85rem; font-weight: 500;"></div>
+            </div>
+            <div class="card">
+                <h2 class="card-title">Ingested Files</h2>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Filename</th>
+                            <th>Size</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="documentsTableBody">
+                        <tr>
+                            <td colspan="3" style="text-align: center; color: #5a5a5a;">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
 
-                    <button type="submit" id="upload-submit-btn" class="btn btn-secondary" style="display: none;">Upload File</button>
+        <!-- AGENT PERSONA SECTION -->
+        <section id="persona" class="page-section">
+            <div class="page-header">
+                <h1 class="page-title">Agent Persona</h1>
+            </div>
+            <div class="card">
+                <form id="personaForm">
+                    <div class="form-group">
+                        <label class="form-label">Agent Name</label>
+                        <input type="text" id="agentName" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Greeting Message</label>
+                        <input type="text" id="agentGreeting" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">System Prompt (Instructions)</label>
+                        <textarea id="agentPrompt" class="form-input"
+                            placeholder="You are a helpful customer support agent..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Escalation Slack Channel ID</label>
+                        <input type="text" id="agentSlack" class="form-input" placeholder="C01234567">
+                    </div>
+                    <button type="submit" class="btn btn-dark" id="savePersonaBtn">Save Persona</button>
+                    <span id="personaSaveMsg"
+                        style="margin-left: 1rem; font-size: 0.85rem; color: green; display: none;">Saved!</span>
                 </form>
             </div>
+        </section>
 
-            <!-- Ingest Control -->
-            <div class="panel-section" style="margin-top: auto; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05);">
-                <button id="ingest-btn" class="btn btn-accent btn-full">
-                    Sync & Ingest Knowledge Base
-                </button>
+        <!-- API KEYS SECTION -->
+        <section id="apikeys" class="page-section">
+            <div class="page-header">
+                <h1 class="page-title">API Keys</h1>
+                <button class="btn btn-dark" id="generateKeyBtn">Generate New Key</button>
             </div>
-
-            <!-- Uploaded Documents Directory -->
-            <div class="panel-section">
-                <span class="section-label">Ingested Files Directory</span>
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th style="width: 80px;">Size</th>
-                                <th style="width: 50px; text-align: center;">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="documents-table-body">
-                            <!-- Populated dynamically -->
-                            <tr>
-                                <td colspan="3" class="empty-table-msg">Fetching documents list...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+            <div id="newKeyAlert" class="card hidden"
+                style="background: rgba(0, 218, 0, 0.05); border-color: rgba(0, 218, 0, 0.2);">
+                <h3 style="color: #008800; margin-bottom: 0.5rem;">Save your new API Key</h3>
+                <p style="font-size: 0.85rem; margin-bottom: 1rem;">This key will only be shown once. Please copy it
+                    now.</p>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <code id="newRawKey"
+                        style="background: #fff; padding: 0.5rem 1rem; border: 1px solid var(--color-border); border-radius: 4px; font-size: 1rem; flex: 1;"></code>
+                    <button class="btn btn-outline" id="copyKeyBtn">Copy</button>
                 </div>
             </div>
+            <div class="card">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Prefix</th>
+                            <th>Label</th>
+                            <th>Created</th>
+                            <th>Last Used</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="apiKeysTableBody">
+                    </tbody>
+                </table>
+            </div>
 
-        </div>
+            <div class="card">
+                <h2 class="card-title">Embed Widget</h2>
+                <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 1rem;">Copy and paste this
+                    script tag into your website's HTML right before the closing <code>&lt;/body&gt;</code> tag.</p>
+                <pre
+                    style="background: var(--color-surface); padding: 1rem; border: 1px solid var(--color-border); border-radius: 6px; font-size: 0.85rem; overflow-x: auto;"><code id="embedCodeSnippet">&lt;script src="https://lyraa-widget.vercel.app/widget.js" data-api-key="YOUR_API_KEY_HERE"&gt;&lt;/script&gt;</code></pre>
+            </div>
+        </section>
 
-        <!-- RIGHT PANEL: PLAYGROUND & LOGS -->
-        <div class="panel-card">
-            <h2 class="panel-title">Live RAG Agent Playground</h2>
+        <!-- ANALYTICS SECTION -->
+        <section id="analytics" class="page-section">
+            <div class="page-header">
+                <h1 class="page-title">Analytics</h1>
+            </div>
+            <div class="card">
+                <h2 class="card-title">Intent Breakdown (Last 30 Days)</h2>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Intent / Category</th>
+                            <th>Message Count</th>
+                        </tr>
+                    </thead>
+                    <tbody id="intentTableBody">
+                        <tr>
+                            <td colspan="2" style="text-align: center; color: #5a5a5a;">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
 
-            <!-- Chat interface -->
-            <div class="chat-widget">
-                <div class="chat-header">
-                    <div class="chat-avatar">⊞</div>
-                    <div>
-                        <div style="font-weight: 600;">Lyraa Support Bot</div>
-                        <div style="font-size: 0.75rem; color: var(--color-text-muted); font-weight: normal;">RAG Agent Powered by @PRG</div>
+        <!-- SETTINGS SECTION -->
+        <section id="settings" class="page-section">
+            <div class="page-header">
+                <h1 class="page-title">Workspace Settings</h1>
+            </div>
+            <div class="card">
+                <form id="settingsForm">
+                    <div class="form-group">
+                        <label class="form-label">Workspace Name</label>
+                        <input type="text" id="settingName" class="form-input" required>
                     </div>
-                </div>
-
-                <div class="chat-messages" id="chat-box">
-                    <div class="chat-msg bot">
-                        <div class="msg-bubble">
-                            Hi! I am the Lyraa support assistant. Drop your query here..
-                        </div>
+                    <div class="form-group">
+                        <label class="form-label">Namespace Slug (Read-only)</label>
+                        <input type="text" id="settingSlug" class="form-input" disabled>
                     </div>
-                </div>
-
-                <div class="typing-indicator" id="chat-typing">
-                    <span></span><span></span><span></span>
-                </div>
-
-                <div class="chat-input-area">
-                    <input type="text" id="chat-input" class="text-input" placeholder="Query the agent to test RAG quality...">
-                    <button id="send-chat-btn" class="btn">Send</button>
-                </div>
+                    <button type="submit" class="btn btn-dark" id="saveSettingsBtn">Save Settings</button>
+                    <span id="settingsSaveMsg"
+                        style="margin-left: 1rem; font-size: 0.85rem; color: green; display: none;">Saved!</span>
+                </form>
             </div>
-
-            <!-- Console Log -->
-            <div class="panel-section">
-                <span class="section-label">Server & Ingestion Pipeline Logs</span>
-                <div class="console-widget" id="console-box">
-                    <div class="console-line info">[SYSTEM] Console playground initialized. Waiting for actions...</div>
-                </div>
-            </div>
-
-        </div>
+        </section>
 
     </main>
 
     <script src="dashboard.js"></script>
 </body>
+
 </html>

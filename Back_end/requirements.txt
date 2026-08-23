@@ -20,6 +20,18 @@ cloudinary
 APScheduler>=3.10.0
 requests
 
+# ── Multi-tenant additions ────────────────────────────────────────────────────
+# Supabase Python client (auth + DB)
+supabase>=2.0.0
+# JWT verification for Supabase tokens
+python-jose[cryptography]>=3.3.0
+# API key hashing
+bcrypt>=4.0.0
+# Async SQLAlchemy ORM
+sqlalchemy[asyncio]>=2.0.0
+# Async Postgres driver (required by SQLAlchemy async engine)
+asyncpg>=0.29.0
+
 # Optional tracing dependencies; skipped on Windows due to native build requirements
 arize-phoenix ; platform_system != "Windows"
 openinference-instrumentation-llama-index ; platform_system != "Windows"

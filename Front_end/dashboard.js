@@ -1,393 +1,400 @@
-// Core Javascript for RAG Developer Dashboard Console
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    let supabase;
+    let token;
+    
+    try {
+        const SUPABASE_URL = 'https://qxbsrlgyvelsppngqtsa.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF4YnNybGd5dmVsc3BwbmdxdHNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5MzIyOTUsImV4cCI6MjEwMjUwODI5NX0.YOjhAEVgI-voP0VicFt7-kUSowHn85TYaMqb0EI4xiU';
+        
+        // Basic validation to prevent createClient from throwing if URL is invalid
+        if (!SUPABASE_URL.startsWith('http')) {
+            throw new Error("Invalid Supabase URL. Please configure Supabase.");
+        }
 
-    // Automatically determine the backend base URL (fallback to localhost:8000 if opened directly as file)
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error || !session) {
+            window.location.href = 'auth.html';
+            return;
+        }
+        
+        token = session.access_token;
+    } catch (err) {
+        console.error("Auth initialization failed:", err);
+        // Hide loading overlay so the user can at least see the dashboard UI (even if API calls fail)
+        // Or redirect to auth.html. We will hide it to avoid the stuck screen.
+        document.getElementById('loadingOverlay').classList.add('hidden');
+        // Optionally redirect to auth:
+        window.location.href = 'auth.html';
+        return;
+    }
+
+    
+    // API BASE URL
     const isLocalFile = window.location.protocol === 'file:';
-    const API_ORIGIN = isLocalFile ? 'http://localhost:8000' : window.location.origin;
-    const BASE_URL = `${API_ORIGIN}/api`;
+    const API_ORIGIN = isLocalFile ? 'http://localhost:8001' : window.location.origin;
+    const API_BASE = `${API_ORIGIN}/api`;
 
-    // Elements
-    const apiStatusDot = document.getElementById('api-status-dot');
-    const apiStatusText = document.getElementById('api-status-text');
-    
-    const webUrlInput = document.getElementById('web-url-input');
-    const addUrlBtn = document.getElementById('add-url-btn');
-    
-    const dropzone = document.getElementById('dropzone');
-    const fileInput = document.getElementById('file-input');
-    const fileInfoBar = document.getElementById('file-info-bar');
-    const selectedFileName = document.getElementById('selected-file-name');
-    const clearFileBtn = document.getElementById('clear-file-btn');
-    const uploadSubmitBtn = document.getElementById('upload-submit-btn');
-    
-    const ingestBtn = document.getElementById('ingest-btn');
-    const documentsTableBody = document.getElementById('documents-table-body');
-
-    const ingestModal = document.getElementById('ingest-modal');
-    const modalCancelBtn = document.getElementById('modal-cancel-btn');
-    const modalConfirmBtn = document.getElementById('modal-confirm-btn');
-    const optAll = document.getElementById('opt-all');
-    const optRecent = document.getElementById('opt-recent');
-    
-    const chatInput = document.getElementById('chat-input');
-    const sendChatBtn = document.getElementById('send-chat-btn');
-    const chatBox = document.getElementById('chat-box');
-    const chatTyping = document.getElementById('chat-typing');
-    
-    const consoleBox = document.getElementById('console-box');
-
-    let selectedFile = null;
-
-    // Helper: Print to Console Widget
-    function log(message, type = 'info') {
-        const line = document.createElement('div');
-        line.className = `console-line ${type}`;
-        const time = new Date().toLocaleTimeString();
-        line.textContent = `[${time}] ${message}`;
-        consoleBox.appendChild(line);
-        consoleBox.scrollTop = consoleBox.scrollHeight;
+    // Global fetch wrapper to include auth token
+    async function apiFetch(path, options = {}) {
+        const headers = {
+            'Authorization': `Bearer ${token}`,
+            ...options.headers
+        };
+        // Don't set Content-Type for FormData (browser sets it automatically with boundary)
+        if (options.body instanceof FormData && headers['Content-Type']) {
+            delete headers['Content-Type'];
+        } else if (!headers['Content-Type'] && !(options.body instanceof FormData)) {
+            headers['Content-Type'] = 'application/json';
+        }
+        
+        const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
+        if (!response.ok) {
+            let detail = 'API Error';
+            try { const err = await response.json(); detail = err.detail || detail; } catch(e) {}
+            throw new Error(detail);
+        }
+        return response.json();
     }
 
-    // Check API Connection Status
-    async function checkBackendStatus() {
-        try {
-            // Check health
-            const response = await fetch(`${API_ORIGIN}/health`);
-            if (response.ok) {
-                apiStatusDot.className = 'status-dot connected';
-                apiStatusText.textContent = 'Backend Connected';
-                log('Successfully connected to Lyraa Backend API.', 'system');
-                fetchDocuments();
-            } else {
-                throw new Error('Health check returned non-200');
-            }
-        } catch (error) {
-            apiStatusDot.className = 'status-dot';
-            apiStatusText.textContent = 'Disconnected';
-            log('Could not connect to Lyraa Backend. Ensure uvicorn server is running on port 8000.', 'error');
-        }
-    }
+    // Hide Loading Overlay once auth is checked
+    document.getElementById('loadingOverlay').classList.add('hidden');
 
-    // List Documents
-    async function fetchDocuments() {
-        try {
-            const response = await fetch(`${BASE_URL}/documents`);
-            if (!response.ok) throw new Error('Failed to retrieve documents');
-            const data = await response.json();
-            renderDocuments(data.documents);
-        } catch (error) {
-            log(`Error fetching documents: ${error.message}`, 'error');
-        }
-    }
+    // 2. NAVIGATION (SPA Tabs)
+    const navItems = document.querySelectorAll('.nav-item');
+    const sections = document.querySelectorAll('.page-section');
+    
+    navItems.forEach(item => {
+        item.addEventListener('click', () => {
+            // Update active nav
+            navItems.forEach(n => n.classList.remove('active'));
+            item.classList.add('active');
+            
+            // Show target section
+            const targetId = item.getAttribute('data-target');
+            sections.forEach(s => s.classList.remove('active'));
+            document.getElementById(targetId).classList.add('active');
 
-    // Render Documents Table
-    function renderDocuments(documents) {
-        documentsTableBody.innerHTML = '';
-        if (!documents || documents.length === 0) {
-            documentsTableBody.innerHTML = `
-                <tr>
-                    <td colspan="3" class="empty-table-msg">No documents ingested in the data directory.</td>
-                </tr>
-            `;
-            return;
-        }
-
-        documents.forEach(doc => {
-            const sizeKB = (doc.size / 1024).toFixed(1);
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td title="${doc.name}">${doc.name}</td>
-                <td>${sizeKB} KB</td>
-                <td style="text-align: center;">
-                    <button class="action-icon-btn delete-doc-btn" data-name="${doc.name}">🗑️</button>
-                </td>
-            `;
-            documentsTableBody.appendChild(row);
+            // Lazy load specific section data
+            if (targetId === 'apikeys') loadApiKeys();
+            if (targetId === 'knowledge') loadDocuments();
+            if (targetId === 'analytics') loadAnalytics();
         });
+    });
 
-        // Add Delete Event Listeners
-        document.querySelectorAll('.delete-doc-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const name = btn.getAttribute('data-name');
-                deleteDocument(name);
-            });
-        });
-    }
+    // 3. LOGOUT
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+        await supabase.auth.signOut();
+        window.location.href = 'auth.html';
+    });
 
-    // Delete Document
-    async function deleteDocument(filename) {
-        if (!confirm(`Are you sure you want to delete ${filename}?`)) return;
+    // 4. LOAD INITIAL DATA
+    async function loadTenantProfile() {
         try {
-            log(`Deleting document: ${filename}...`, 'info');
-            const response = await fetch(`${BASE_URL}/documents/${filename}`, {
-                method: 'DELETE'
-            });
-            const data = await response.json();
-            if (response.ok) {
-                log(`Successfully deleted ${filename}.`, 'system');
-                fetchDocuments();
-            } else {
-                throw new Error(data.detail || 'Delete failed');
-            }
-        } catch (error) {
-            log(`Delete failed: ${error.message}`, 'error');
+            const tenant = await apiFetch('/admin/tenants/me');
+            document.getElementById('tenantSelector').textContent = tenant.name;
+            document.getElementById('settingName').value = tenant.name;
+            document.getElementById('settingSlug').value = tenant.slug;
+        } catch (err) {
+            console.error('Failed to load profile:', err);
         }
     }
 
-    // Extract Web URL (Tavily)
-    async function extractWebUrl() {
-        const url = webUrlInput.value.trim();
-        if (!url) {
-            alert('Please enter a valid URL.');
-            return;
-        }
-
+    async function loadOverview() {
         try {
-            log(`Triggering Tavily extraction for: ${url}...`, 'info');
-            addUrlBtn.disabled = true;
-            addUrlBtn.textContent = 'Extracting...';
-
-            const response = await fetch(`${BASE_URL}/add-link`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: url })
-            });
-            const data = await response.json();
-
-            if (response.ok) {
-                log(data.message, 'system');
-                webUrlInput.value = '';
-                fetchDocuments();
-            } else {
-                throw new Error(data.detail || 'Scraping failed');
-            }
-        } catch (error) {
-            log(`Extraction failed: ${error.message}`, 'error');
-        } finally {
-            addUrlBtn.disabled = false;
-            addUrlBtn.textContent = 'Extract';
+            const data = await apiFetch('/admin/overview');
+            document.getElementById('statMsgToday').textContent = data.messages_today;
+            document.getElementById('statMsgMonth').textContent = data.messages_this_month;
+            document.getElementById('statDocs').textContent = data.total_documents;
+            document.getElementById('planName').textContent = data.plan.charAt(0).toUpperCase() + data.plan.slice(1);
+            
+            const usagePct = data.message_limit > 0 ? (data.messages_used / data.message_limit) * 100 : 0;
+            document.getElementById('usageBar').style.width = `${Math.min(usagePct, 100)}%`;
+            document.getElementById('usageText').textContent = `${data.messages_used} / ${data.message_limit} messages used`;
+        } catch (err) {
+            console.error('Failed to load overview:', err);
         }
     }
 
-    // File Selection & Drag-and-Drop Handlers
-    dropzone.addEventListener('click', () => fileInput.click());
+    async function loadAgentPersona() {
+        try {
+            const persona = await apiFetch('/admin/agent-config');
+            document.getElementById('agentName').value = persona.agent_name || '';
+            document.getElementById('agentGreeting').value = persona.greeting_message || '';
+            document.getElementById('agentPrompt').value = persona.system_prompt || '';
+            document.getElementById('agentSlack').value = persona.escalation_channel || '';
+        } catch (err) {
+            console.error('Failed to load persona:', err);
+        }
+    }
 
-    dropzone.addEventListener('dragover', (e) => {
+    // Call on load
+    loadTenantProfile();
+    loadOverview();
+    loadAgentPersona();
+
+    // 5. EVENT LISTENERS: PERSONA
+    document.getElementById('personaForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        dropzone.style.borderColor = 'var(--color-primary)';
-        dropzone.style.backgroundColor = 'rgba(59, 130, 246, 0.05)';
+        const btn = document.getElementById('savePersonaBtn');
+        btn.textContent = 'Saving...';
+        btn.disabled = true;
+        
+        try {
+            await apiFetch('/admin/agent-config', {
+                method: 'PUT',
+                body: JSON.stringify({
+                    agent_name: document.getElementById('agentName').value,
+                    greeting_message: document.getElementById('agentGreeting').value,
+                    system_prompt: document.getElementById('agentPrompt').value,
+                    escalation_channel: document.getElementById('agentSlack').value
+                })
+            });
+            const msg = document.getElementById('personaSaveMsg');
+            msg.style.display = 'inline';
+            setTimeout(() => msg.style.display = 'none', 3000);
+        } catch (err) {
+            alert('Failed to save persona: ' + err.message);
+        } finally {
+            btn.textContent = 'Save Persona';
+            btn.disabled = false;
+        }
     });
 
-    dropzone.addEventListener('dragleave', () => {
-        dropzone.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-        dropzone.style.backgroundColor = 'rgba(255, 255, 255, 0.02)';
+    // 6. EVENT LISTENERS: SETTINGS
+    document.getElementById('settingsForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('saveSettingsBtn');
+        btn.textContent = 'Saving...';
+        btn.disabled = true;
+
+        try {
+            const name = document.getElementById('settingName').value;
+            await apiFetch('/admin/tenants/me', {
+                method: 'PUT',
+                body: JSON.stringify({ name })
+            });
+            document.getElementById('tenantSelector').textContent = name;
+            const msg = document.getElementById('settingsSaveMsg');
+            msg.style.display = 'inline';
+            setTimeout(() => msg.style.display = 'none', 3000);
+        } catch (err) {
+            alert('Failed to save settings: ' + err.message);
+        } finally {
+            btn.textContent = 'Save Settings';
+            btn.disabled = false;
+        }
     });
 
+    // 7. API KEYS
+    async function loadApiKeys() {
+        const tbody = document.getElementById('apiKeysTableBody');
+        try {
+            const keys = await apiFetch('/admin/api-keys');
+            tbody.innerHTML = '';
+            if (keys.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #5a5a5a;">No API Keys found.</td></tr>`;
+                return;
+            }
+            keys.forEach(key => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><code>${key.key_prefix}...</code></td>
+                    <td>${key.label || 'Default'}</td>
+                    <td>${new Date(key.created_at).toLocaleDateString()}</td>
+                    <td>${key.last_used_at ? new Date(key.last_used_at).toLocaleDateString() : 'Never'}</td>
+                    <td><span class="badge" style="background: ${key.is_active ? '#dcfce7; color: #166534' : '#fee2e2; color: #991b1b'}">${key.is_active ? 'Active' : 'Revoked'}</span></td>
+                    <td>
+                        ${key.is_active ? `<button class="btn btn-outline revoke-key-btn" data-id="${key.id}" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Revoke</button>` : ''}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.querySelectorAll('.revoke-key-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    if(!confirm('Are you sure you want to revoke this key? Any widget using it will stop working immediately.')) return;
+                    const id = e.target.getAttribute('data-id');
+                    try {
+                        await apiFetch(`/admin/api-keys/${id}`, { method: 'DELETE' });
+                        loadApiKeys();
+                    } catch(err) {
+                        alert('Failed to revoke key: ' + err.message);
+                    }
+                });
+            });
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: red;">Failed to load API keys.</td></tr>`;
+        }
+    }
+
+    document.getElementById('generateKeyBtn').addEventListener('click', async () => {
+        const label = prompt("Enter a label for this API key (e.g., 'Production Website'):", "My Website");
+        if (!label) return;
+
+        try {
+            const data = await apiFetch('/admin/api-keys', {
+                method: 'POST',
+                body: JSON.stringify({ label })
+            });
+            document.getElementById('newRawKey').textContent = data.raw_key;
+            document.getElementById('newKeyAlert').classList.remove('hidden');
+            loadApiKeys();
+        } catch (err) {
+            alert('Failed to generate key: ' + err.message);
+        }
+    });
+
+    document.getElementById('copyKeyBtn').addEventListener('click', () => {
+        const key = document.getElementById('newRawKey').textContent;
+        navigator.clipboard.writeText(key).then(() => {
+            const btn = document.getElementById('copyKeyBtn');
+            btn.textContent = 'Copied!';
+            setTimeout(() => btn.textContent = 'Copy', 2000);
+        });
+    });
+
+    // 8. KNOWLEDGE BASE (Documents & Upload)
+    async function loadDocuments() {
+        const tbody = document.getElementById('documentsTableBody');
+        try {
+            const data = await apiFetch('/documents');
+            const docs = data.documents;
+            tbody.innerHTML = '';
+            
+            if (docs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: #5a5a5a;">No documents found. Upload a file or add a web URL above.</td></tr>`;
+                return;
+            }
+
+            docs.forEach(doc => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${doc.name}</td>
+                    <td>${(doc.size / 1024).toFixed(1)} KB</td>
+                    <td><button class="btn btn-outline delete-doc-btn" data-id="${doc.public_id}" style="padding: 0.25rem 0.5rem; color: var(--color-danger); border-color: var(--color-danger); font-size: 0.75rem;">Delete</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.querySelectorAll('.delete-doc-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const id = e.target.getAttribute('data-id');
+                    if(!confirm('Delete this document? You must Sync & Ingest afterwards to remove it from the AI knowledge base.')) return;
+                    try {
+                        await apiFetch(`/documents?public_id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+                        loadDocuments();
+                    } catch(err) {
+                        alert('Failed to delete document: ' + err.message);
+                    }
+                });
+            });
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: red;">Failed to load documents.</td></tr>`;
+        }
+    }
+
+    // File Upload Handlers
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const uploadStatus = document.getElementById('uploadStatus');
+
+    dropzone.addEventListener('click', () => fileInput.click());
+    dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = 'var(--color-primary)'; });
+    dropzone.addEventListener('dragleave', () => { dropzone.style.borderColor = 'var(--color-border)'; });
     dropzone.addEventListener('drop', (e) => {
         e.preventDefault();
-        dropzone.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-        dropzone.style.backgroundColor = 'rgba(255, 255, 255, 0.02)';
-        if (e.dataTransfer.files.length > 0) {
-            handleFileSelect(e.dataTransfer.files[0]);
-        }
+        dropzone.style.borderColor = 'var(--color-border)';
+        if (e.dataTransfer.files.length > 0) handleFileUpload(e.dataTransfer.files[0]);
     });
-
     fileInput.addEventListener('change', () => {
-        if (fileInput.files.length > 0) {
-            handleFileSelect(fileInput.files[0]);
-        }
+        if (fileInput.files.length > 0) handleFileUpload(fileInput.files[0]);
     });
 
-    function handleFileSelect(file) {
-        selectedFile = file;
-        selectedFileName.textContent = file.name;
-        fileInfoBar.style.display = 'flex';
-        uploadSubmitBtn.style.display = 'flex';
-        log(`File selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB). Ready to upload.`, 'info');
-    }
-
-    clearFileBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        resetFileForm();
-        log('File selection cleared.', 'info');
-    });
-
-    function resetFileForm() {
-        selectedFile = null;
-        fileInput.value = '';
-        selectedFileName.textContent = 'No file selected';
-        fileInfoBar.style.display = 'none';
-        uploadSubmitBtn.style.display = 'none';
-    }
-
-    // Upload File
-    document.getElementById('file-upload-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        if (!selectedFile) return;
-
+    async function handleFileUpload(file) {
+        uploadStatus.style.color = '#000';
+        uploadStatus.textContent = `Uploading ${file.name}...`;
         const formData = new FormData();
-        formData.append('file', selectedFile);
+        formData.append('file', file);
 
         try {
-            log(`Uploading file ${selectedFile.name}...`, 'info');
-            uploadSubmitBtn.disabled = true;
-            uploadSubmitBtn.textContent = 'Uploading...';
+            await apiFetch('/upload', { method: 'POST', body: formData });
+            uploadStatus.style.color = 'green';
+            uploadStatus.textContent = `Successfully uploaded ${file.name}. Don't forget to Sync & Ingest!`;
+            fileInput.value = '';
+            loadDocuments();
+        } catch (err) {
+            uploadStatus.style.color = 'red';
+            uploadStatus.textContent = `Upload failed: ${err.message}`;
+        }
+    }
 
-            const response = await fetch(`${BASE_URL}/upload`, {
+    // Add Web URL
+    document.getElementById('addUrlBtn').addEventListener('click', async () => {
+        const url = document.getElementById('webUrlInput').value;
+        const btn = document.getElementById('addUrlBtn');
+        if (!url) return;
+        
+        btn.disabled = true;
+        btn.textContent = 'Scraping...';
+        try {
+            await apiFetch('/add-link', {
                 method: 'POST',
-                body: formData
+                body: JSON.stringify({ url })
             });
-            const data = await response.json();
-
-            if (response.ok) {
-                log(data.message, 'system');
-                resetFileForm();
-                fetchDocuments();
-            } else {
-                throw new Error(data.detail || 'Upload failed');
-            }
-        } catch (error) {
-            log(`Upload failed: ${error.message}`, 'error');
+            document.getElementById('webUrlInput').value = '';
+            alert('Successfully extracted web content. Remember to Sync & Ingest!');
+            loadDocuments();
+        } catch (err) {
+            alert('Scraping failed: ' + err.message);
         } finally {
-            uploadSubmitBtn.disabled = false;
-            uploadSubmitBtn.textContent = 'Upload File';
+            btn.disabled = false;
+            btn.textContent = 'Scrape & Add';
         }
     });
 
-    // MODAL: Ingest Mode Selection
-    let selectedIngestMode = 'all';
-
-    function openIngestModal() {
-        // Reset to default selection
-        selectedIngestMode = 'all';
-        optAll.classList.add('selected');
-        optRecent.classList.remove('selected');
-        ingestModal.classList.add('visible');
-    }
-
-    function closeIngestModal() {
-        ingestModal.classList.remove('visible');
-    }
-
-    [optAll, optRecent].forEach(opt => {
-        opt.addEventListener('click', () => {
-            optAll.classList.remove('selected');
-            optRecent.classList.remove('selected');
-            opt.classList.add('selected');
-            selectedIngestMode = opt.dataset.mode;
-        });
-    });
-
-    modalCancelBtn.addEventListener('click', () => {
-        closeIngestModal();
-        log('Ingestion cancelled by user.', 'info');
-    });
-
-    // Close modal when clicking on the backdrop
-    ingestModal.addEventListener('click', (e) => {
-        if (e.target === ingestModal) {
-            closeIngestModal();
-            log('Ingestion cancelled by user.', 'info');
-        }
-    });
-
-    modalConfirmBtn.addEventListener('click', () => {
-        closeIngestModal();
-        ingestData(false, selectedIngestMode);
-    });
-
-    // Ingest Knowledge Base
-    async function ingestData(isAuto = false, mode = 'all') {
-        const modeLabel = mode === 'recent' ? 'recent files only (last 24 hours)' : 'all files';
+    // Ingest
+    document.getElementById('triggerIngestBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('triggerIngestBtn');
+        btn.disabled = true;
+        btn.textContent = 'Syncing vectors...';
         try {
-            log(`Ingestion mode: ${modeLabel}`, 'system');
-            log('Initializing Pinecone & Gemini vector database sync...', 'info');
-            log('Starting document processing pipeline (identifying file types)...', 'info');
-            ingestBtn.disabled = true;
-            ingestBtn.textContent = 'Ingesting & Syncing...';
-
-            const response = await fetch(`${BASE_URL}/ingest`, {
+            const data = await apiFetch('/ingest', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ mode: mode })
+                body: JSON.stringify({ mode: 'all' })
             });
-            const data = await response.json();
-
-            if (response.ok) {
-                log(data.message, 'system');
-                if (!isAuto) {
-                    alert(data.message);
-                }
-            } else {
-                throw new Error(data.detail || 'Ingestion failed');
-            }
-        } catch (error) {
-            log(`Ingestion failed: ${error.message}`, 'error');
-            if (!isAuto) {
-                alert(`Ingestion failed: ${error.message}`);
-            }
+            alert(data.message);
+        } catch(err) {
+            alert('Ingest failed: ' + err.message);
         } finally {
-            ingestBtn.disabled = false;
-            ingestBtn.textContent = '🚀 Sync & Ingest Knowledge Base';
+            btn.disabled = false;
+            btn.textContent = 'Sync & Ingest';
         }
-    }
+    });
 
-    // Chat Interface Handlers
-    function appendChatMessage(text, sender = 'bot') {
-        const msg = document.createElement('div');
-        msg.className = `chat-msg ${sender}`;
-        msg.innerHTML = `<div class="msg-bubble">${text}</div>`;
-        chatBox.appendChild(msg);
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    async function sendChatMessage() {
-        const text = chatInput.value.trim();
-        if (!text) return;
-
-        appendChatMessage(text, 'user');
-        chatInput.value = '';
-        chatTyping.style.display = 'flex';
-        chatBox.scrollTop = chatBox.scrollHeight;
-
-        log(`Sending query to RAG agent: "${text}"`, 'info');
-
+    // 9. ANALYTICS
+    async function loadAnalytics() {
+        const tbody = document.getElementById('intentTableBody');
         try {
-            const response = await fetch(`${BASE_URL}/chat`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: text })
-            });
-            const data = await response.json();
-
-            chatTyping.style.display = 'none';
-
-            if (response.ok) {
-                appendChatMessage(data.response, 'bot');
-                log('Agent responded successfully.', 'system');
-            } else {
-                throw new Error(data.detail || 'Chat query failed');
+            const data = await apiFetch('/admin/analytics');
+            tbody.innerHTML = '';
+            
+            if (!data.intent_breakdown || data.intent_breakdown.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="2" style="text-align: center; color: #5a5a5a;">No usage data yet.</td></tr>`;
+                return;
             }
-        } catch (error) {
-            chatTyping.style.display = 'none';
-            appendChatMessage(`Error: ${error.message}. Make sure you ingested documents and configured your keys.`, 'bot');
-            log(`Chat failed: ${error.message}`, 'error');
+
+            data.intent_breakdown.forEach(intent => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><span class="badge" style="background: rgba(0,0,0,0.08);">${intent.intent}</span></td>
+                    <td>${intent.count}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="2" style="text-align: center; color: red;">Failed to load analytics.</td></tr>`;
         }
     }
-
-    // Bind Button Events
-    addUrlBtn.addEventListener('click', extractWebUrl);
-    webUrlInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') extractWebUrl();
-    });
-
-    ingestBtn.addEventListener('click', openIngestModal);
-
-    sendChatBtn.addEventListener('click', sendChatMessage);
-    chatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') sendChatMessage();
-    });
-
-    // Start status check
-    checkBackendStatus();
 });

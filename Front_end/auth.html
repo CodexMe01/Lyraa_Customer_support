@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Lyraa Agent</title>
+    <link rel="stylesheet" href="index.css">
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--color-cream);
+            padding: 2rem;
+        }
+
+        .auth-box {
+            background: #fff;
+            padding: 3rem;
+            border-radius: var(--radius-lg);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            width: 100%;
+            max-width: 440px;
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .auth-logo {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--color-off-black);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .auth-subtitle {
+            color: var(--color-gray-text);
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--color-off-black);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+            transition: all var(--transition-fast);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--color-blue);
+            box-shadow: 0 0 0 3px rgba(0, 12, 225, 0.1);
+        }
+
+        .auth-btn {
+            width: 100%;
+            padding: 0.85rem;
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--color-off-black);
+            color: #fff;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: #333;
+        }
+
+        .btn-google {
+            background: #fff;
+            color: var(--color-off-black);
+            border: 1px solid var(--color-border);
+            margin-top: 1rem;
+        }
+
+        .btn-google:hover {
+            background: var(--color-off-white);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 1.5rem 0;
+            color: var(--color-gray-light);
+            font-size: 0.85rem;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .divider:not(:empty)::before {
+            margin-right: .5em;
+        }
+
+        .divider:not(:empty)::after {
+            margin-left: .5em;
+        }
+
+        .auth-switch {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: var(--color-gray-text);
+        }
+
+        .error-message {
+            color: #e53e3e;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            display: none;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-box">
+            <div class="auth-header">
+                <div class="auth-logo">
+                    <!-- Placeholder Icon -->
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="currentColor"/>
+                        <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Lyraa
+                </div>
+                <p class="auth-subtitle" id="authSubtitle">Sign in to your dashboard</p>
+            </div>
+
+            <form id="authForm">
+                <div class="form-group" id="nameGroup" style="display: none;">
+                    <label class="form-label" for="name">Company Name</label>
+                    <input type="text" id="name" class="form-input" placeholder="Acme Corp">
+                </div>
+
+                <div class="form-group" id="slugGroup" style="display: none;">
+                    <label class="form-label" for="slug">Workspace Slug (Namespace)</label>
+                    <input type="text" id="slug" class="form-input" placeholder="acme-corp">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="email">Email</label>
+                    <input type="email" id="email" class="form-input" placeholder="you@company.com" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="password">Password</label>
+                    <input type="password" id="password" class="form-input" placeholder="••••••••" required>
+                </div>
+
+                <button type="submit" class="auth-btn btn-primary" id="submitBtn">Sign In</button>
+                <div id="errorMessage" class="error-message"></div>
+            </form>
+
+            <div class="divider">or</div>
+
+            <button class="auth-btn btn-google" id="googleBtn">
+                <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                Continue with Google
+            </button>
+
+            <div class="auth-switch">
+                <span id="switchText">Don't have an account?</span>
+                <a href="#" class="link-blue" id="switchBtn">Sign Up</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ensure you have these env vars configured correctly -->
+    <script>
+        const SUPABASE_URL = 'https://qxbsrlgyvelsppngqtsa.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF4YnNybGd5dmVsc3BwbmdxdHNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5MzIyOTUsImV4cCI6MjEwMjUwODI5NX0.YOjhAEVgI-voP0VicFt7-kUSowHn85TYaMqb0EI4xiU';
+        
+        let supabaseClient;
+        try {
+            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } catch (e) {
+            console.error("Supabase initialization failed:", e);
+        }
+        
+        let isSignUp = false;
+
+        const form = document.getElementById('authForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const googleBtn = document.getElementById('googleBtn');
+        const switchBtn = document.getElementById('switchBtn');
+        const switchText = document.getElementById('switchText');
+        const authSubtitle = document.getElementById('authSubtitle');
+        const nameGroup = document.getElementById('nameGroup');
+        const slugGroup = document.getElementById('slugGroup');
+        const errorMsg = document.getElementById('errorMessage');
+
+        const API_BASE_URL = 'http://localhost:8001/api'; // Or relative '/api' in prod
+
+        // Toggle Sign In / Sign Up
+        switchBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            isSignUp = !isSignUp;
+            
+            if (isSignUp) {
+                authSubtitle.textContent = 'Create your Lyraa workspace';
+                submitBtn.textContent = 'Sign Up';
+                switchText.textContent = 'Already have an account?';
+                switchBtn.textContent = 'Sign In';
+                nameGroup.style.display = 'block';
+                slugGroup.style.display = 'block';
+                document.getElementById('name').required = true;
+                document.getElementById('slug').required = true;
+            } else {
+                authSubtitle.textContent = 'Sign in to your dashboard';
+                submitBtn.textContent = 'Sign In';
+                switchText.textContent = 'Don\'t have an account?';
+                switchBtn.textContent = 'Sign Up';
+                nameGroup.style.display = 'none';
+                slugGroup.style.display = 'none';
+                document.getElementById('name').required = false;
+                document.getElementById('slug').required = false;
+            }
+            errorMsg.style.display = 'none';
+        });
+
+        // Form Submit
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorMsg.style.display = 'none';
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Loading...';
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                if (isSignUp) {
+                    const name = document.getElementById('name').value;
+                    const slug = document.getElementById('slug').value;
+
+                    // 1. Sign up with Supabase Auth
+                    const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+                        email,
+                        password,
+                    });
+
+                    if (authError) throw authError;
+
+                    // 2. Register Tenant in Backend
+                    const session = authData.session;
+                    if (!session) {
+                        throw new Error("Please check your email to verify your account.");
+                    }
+
+                    const token = session.access_token;
+                    const response = await fetch(`${API_BASE_URL}/admin/tenants`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ name, slug })
+                    });
+
+                    if (!response.ok) {
+                        const err = await response.json();
+                        throw new Error(err.detail || 'Failed to register tenant.');
+                    }
+                    
+                    window.location.href = 'dashboard.html';
+
+                } else {
+                    // Sign In
+                    const { data, error } = await supabaseClient.auth.signInWithPassword({
+                        email,
+                        password,
+                    });
+
+                    if (error) throw error;
+                    window.location.href = 'dashboard.html';
+                }
+            } catch (error) {
+                errorMsg.textContent = error.message;
+                errorMsg.style.display = 'block';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = isSignUp ? 'Sign Up' : 'Sign In';
+            }
+        });
+
+        // Google OAuth
+        googleBtn.addEventListener('click', async () => {
+            if (!supabaseClient) {
+                errorMsg.textContent = 'Authentication service not initialized.';
+                errorMsg.style.display = 'block';
+                return;
+            }
+            try {
+                // When opened as a file:// URL, window.location.origin is 'null'.
+                // Fall back to localhost so the OAuth redirect works during local development.
+                const origin = (window.location.origin === 'null' || !window.location.origin)
+                    ? 'http://localhost:8001'
+                    : window.location.origin;
+
+                const { data, error } = await supabaseClient.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                        redirectTo: origin + '/dashboard.html'
+                    }
+                });
+                if (error) throw error;
+            } catch (error) {
+                errorMsg.textContent = error.message;
+                errorMsg.style.display = 'block';
+            }
+        });
+        
+        // Check if already logged in
+        if (supabaseClient) {
+            supabaseClient.auth.getSession().then(({ data: { session } }) => {
+                if (session) {
+                    window.location.href = 'dashboard.html';
+                }
+            }).catch(e => console.error(e));
+        }
+    </script>
+</body>
+</html>
