@@ -1,13 +1,14 @@
-﻿<div align="center">
+<div align="center">
 
-# 🤖 Lyraa — AI-Powered Customer Support Agent
+# 🤖 Lyraa — Multi-Tenant AI Customer Support SaaS
 
-**A production-ready, RAG-driven customer support agent with streaming chat, document ingestion, MCP server support, and a polished web frontend.**
+**A production-ready, RAG-driven customer support agent with streaming chat, document ingestion, multi-tenant architecture, and a polished web frontend for independent businesses.**
 
 [![Python](https://img.shields.io/badge/Python-3.14+-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.141+-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![LlamaIndex](https://img.shields.io/badge/LlamaIndex-0.14+-7C3AED?style=flat)](https://docs.llamaindex.ai)
 [![Pinecone](https://img.shields.io/badge/Pinecone-Vector%20DB-00B388?style=flat)](https://pinecone.io)
+[![Supabase](https://img.shields.io/badge/Supabase-Database%20%26%20Auth-3ECF8E?style=flat&logo=supabase&logoColor=white)](https://supabase.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 </div>
@@ -36,59 +37,66 @@
 
 ## 🌟 Overview
 
-**Lyraa** is an intelligent customer support agent that combines **Retrieval-Augmented Generation (RAG)**, **intent classification**, and a **ReAct agent** to deliver fast, context-aware support responses. It handles everything from casual greetings to complex order lookups and company knowledge base queries — all with real-time token streaming.
+**Lyraa** is an intelligent customer support SaaS platform that combines **Retrieval-Augmented Generation (RAG)**, **intent classification**, and a **ReAct agent** to deliver fast, context-aware support responses. 
+
+Evolving from a single-tenant bot into a **multi-tenant SaaS platform**, Lyraa enables independent businesses to each have an isolated knowledge base, custom AI agent persona, admin dashboard, and embeddable widgets for their own websites.
 
 Designed as a full-stack solution, Lyraa ships with:
-- A **FastAPI** backend with SSE streaming chat
-- A **Pinecone** vector store for semantic search
+- A **FastAPI** backend with SSE streaming chat and tenant-aware endpoints
+- **Supabase** for robust Authentication (JWT/OAuth) and PostgreSQL database
+- A **Pinecone** vector store with namespace isolation (`tenant_<uuid>`) per tenant
 - **Cohere Re-ranking** for higher quality retrieval
-- **Cloudinary** cloud storage for uploaded documents
+- **Cloudinary** cloud storage for uploaded documents scoped by tenant
 - An **MCP (Model Context Protocol)** server for AI agent integrations
-- A **vanilla HTML/CSS/JS** frontend with a landing page, chat dashboard, and API docs
+- An **embeddable chat widget** (`widget.js`) to integrate on any website
+- A **vanilla HTML/CSS/JS** frontend with landing pages, tenant admin dashboard, and API docs
 
 ---
 
 ## 🏗 Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
-│                         Frontend                                │
-│         Landing Page  │  Agent Dashboard  │  API Docs           │
+│                         Frontend (Vercel)                       │
+│  auth.html (Login)  │  dashboard.html (Admin) │ widget.js (Bot) │
 └───────────────────────────────┬─────────────────────────────────┘
-                                │ HTTP / SSE
+                                │ HTTPS / SSE / API Keys
 ┌───────────────────────────────▼─────────────────────────────────┐
 │                      FastAPI Backend                            │
+│                                                                 │
+│  Auth Middleware → validate Supabase JWT or API Key             │
 │                                                                 │
 │  ┌──────────────────────────────────────────────────────────┐   │
 │  │                   Intent Classifier                      │   │
 │  │   smalltalk → instant reply  (zero LLM cost)             │   │
-│  │   general_query → RAG pipeline                           │   │
+│  │   general_query → RAG pipeline (tenant namespace)        │   │
 │  │   order_query   → Order Status Tool                      │   │
 │  │   ambiguous     → ReAct Agent (full reasoning loop)      │   │
 │  └──────────────────────┬───────────────────────────────────┘   │
 │                          │                                      │
 │  ┌──────────────┐  ┌─────▼────────┐  ┌─────────────────────┐    │
 │  │  RAG Engine  │  │  ReAct Agent │  │   Order Status Tool │    │
-│  │  (LlamaIndex)│  │  (LlamaIndex)│  │   Escalation Tool   │    │
+│  │ (LlamaIndex) │  │ (LlamaIndex) │  │   Escalation Tool   │    │
 │  └──────┬───────┘  └──────────────┘  └──────────┬──────────┘    │
 │         │                                         │             │
-│  ┌──────▼───────┐                        ┌────────▼──────────┐   │
-│  │   Pinecone   │                        │   Slack Notifier  │   │
-│  │ Vector Store │                        │  (Human Escalation) │ │
-│  └──────────────┘                        └───────────────────┘   │
-│                                                                  │
-│  ┌───────────────────────────────────────────────────────────┐   │
-│  │              Ingestion Pipeline                           │   │
-│  │  PDF / DOCX / CSV / Images / Web URLs                     │   │
-│  │  OCR → Semantic Chunking → Google GenAI Embeddings        │   │
-│  │  → Pinecone Upsert                                        │   │
-│  └───────────────────────────────────────────────────────────┘   │
-└──────────────────────────────────────────────────────────────────┘
-                                │
-┌───────────────────────────────▼─────────────────────────────────┐
-│                      MCP Server (FastMCP)                       │
-│              ask_support_agent(query, user_id)                  │
-└─────────────────────────────────────────────────────────────────┘
+│  ┌──────▼──────────┐                     ┌────────▼──────────┐  │
+│  │    Pinecone     │                     │   Slack Notifier  │  │
+│  │ NS: tenant_<id> │                     │ (Human Escalation)│  │
+│  └─────────────────┘                     └───────────────────┘  │
+│                                                                 │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │              Ingestion Pipeline                           │  │
+│  │  OCR → Semantic Chunking → Google GenAI Embeddings        │  │
+│  │  → Pinecone Upsert (Tenant Namespace)                     │  │
+│  └───────────────────────────────────────────────────────────┘  │
+└───────────────────────┬──────────────────────┬──────────────────┘
+                        │                      │
+┌───────────────────────▼───────┐      ┌───────▼──────────────────┐
+│          Supabase             │      │       MCP Server         │
+│  - Auth (Email/Google)        │      │    ask_support_agent     │
+│  - PostgreSQL (Tenants,       │      └──────────────────────────┘
+│    API Keys, Configs, Logs)   │
+└───────────────────────────────┘
 ```
 
 ---
@@ -97,16 +105,17 @@ Designed as a full-stack solution, Lyraa ships with:
 
 | Feature | Description |
 |---|---|
-| 🧠 **Intent Classification** | Zero-LLM regex/keyword router — routes smalltalk, order queries, and general queries before touching any AI pipeline |
-| 💬 **Streaming Chat (SSE)** | Token-by-token streaming via Server-Sent Events for a real-time, responsive chat experience |
-| 📚 **RAG Pipeline** | Semantic search over your custom knowledge base using Pinecone + Cohere Re-ranking |
-| 🔄 **ReAct Agent** | Full LlamaIndex ReAct agent as a fallback for ambiguous or complex queries |
-| 📁 **Document Ingestion** | Ingest PDFs, DOCX, images (OCR), CSVs, TXT, and live web URLs via Tavily web scraping |
-| ☁️ **Cloud Storage** | Files uploaded to Cloudinary with per-user folders and 24-hour auto-expiry |
-| 🔔 **Human Escalation** | Automatically pages a human agent via Slack when the bot cannot resolve an issue |
-| 🔌 **MCP Server** | Expose the support agent as an MCP tool for integration with Claude Desktop and other AI systems |
-| 🖥️ **Web Frontend** | Polished multi-page UI: landing page, live chat dashboard, and API documentation |
-| 📊 **Observability** | Optional Arize Phoenix tracing for LlamaIndex (non-Windows) |
+| 🏢 **Multi-Tenant SaaS** | Isolated data, custom agent personas, and API keys for multiple independent businesses on one platform. |
+| 🔒 **Authentication & DB** | Powered by **Supabase** for secure user login (JWT, Google OAuth) and robust PostgreSQL relational data. |
+| 🌐 **Embeddable Widget** | A drop-in `widget.js` script to instantly add the Lyraa agent to any external website. |
+| 🧠 **Intent Classification** | Zero-LLM regex/keyword router — routes smalltalk, order queries, and general queries before AI pipelines. |
+| 💬 **Streaming Chat (SSE)** | Token-by-token streaming via Server-Sent Events for a real-time, responsive chat experience. |
+| 📚 **Isolated RAG Pipeline** | Semantic search over custom knowledge bases using Pinecone Namespaces + Cohere Re-ranking. |
+| 🔄 **ReAct Agent** | Full LlamaIndex ReAct agent as a fallback for ambiguous or complex queries. |
+| 📁 **Document Ingestion** | Ingest PDFs, DOCX, images (OCR), CSVs, TXT, and live web URLs (Tavily). Tenant-scoped storage in Cloudinary. |
+| 🔔 **Human Escalation** | Automatically pages a human agent via Slack when the bot cannot resolve an issue. |
+| 🔌 **MCP Server** | Expose the support agent as an MCP tool for integration with Claude Desktop and other AI systems. |
+| 🖥️ **Admin Dashboard** | Tenant dashboard to manage knowledge bases, agent personas, API keys, and analytics. |
 
 ---
 
@@ -117,6 +126,7 @@ Designed as a full-stack solution, Lyraa ships with:
 | Layer | Technology |
 |---|---|
 | API Framework | [FastAPI](https://fastapi.tiangolo.com) + [Uvicorn](https://www.uvicorn.org) |
+| Auth & Relational DB | [Supabase](https://supabase.com) (PostgreSQL) + `supabase-py` |
 | AI Orchestration | [LlamaIndex](https://docs.llamaindex.ai) |
 | LLM | [Groq](https://groq.com) (`llama-3.1-8b-instant`) |
 | Embeddings | [Google GenAI](https://ai.google.dev) (`text-embedding-004`) |
@@ -125,8 +135,6 @@ Designed as a full-stack solution, Lyraa ships with:
 | Cloud Storage | [Cloudinary](https://cloudinary.com) |
 | Web Scraping | [Tavily](https://tavily.com) |
 | MCP Server | [FastMCP](https://github.com/jlowin/fastmcp) |
-| Notifications | [Slack SDK](https://slack.dev/python-slack-sdk) |
-| OCR | [PyMuPDF](https://pymupdf.readthedocs.io) + [pytesseract](https://github.com/madmaze/pytesseract) |
 
 ### Frontend
 
@@ -134,46 +142,41 @@ Designed as a full-stack solution, Lyraa ships with:
 |---|---|
 | Structure | HTML5 |
 | Styling | Vanilla CSS (no frameworks) |
-| Logic | Vanilla JavaScript |
-| Typography | Inter (Google Fonts) |
+| Logic | Vanilla JavaScript, Supabase JS SDK (`@supabase/supabase-js`) |
+| Widget Hosting | [Vercel](https://vercel.com) |
 
 ---
 
 ## 📂 Project Structure
 
-```
+```text
 Lyraa_agent/
 ├── Back_end/
 │   ├── agent/
-│   │   ├── bot.py          # Core routing logic: intent → response path
-│   │   ├── intent.py       # Zero-LLM intent classifier (regex + keywords)
-│   │   ├── rag.py          # Pinecone + Cohere query engine (singleton)
-│   │   └── tools.py        # Order status + human escalation tools
+│   │   ├── bot.py          # Tenant-aware ReAct agent & intent routing
+│   │   ├── rag.py          # Pinecone + Cohere query engine (tenant namespaces)
+│   │   └── tools.py        # Order status + Slack escalation tools
 │   ├── app/
 │   │   ├── api/
-│   │   │   └── endpoints.py    # All FastAPI routes
-│   │   ├── config.py           # App-wide configuration constants
-│   │   └── main.py             # FastAPI app entry point + lifespan
+│   │   │   ├── endpoints.py       # Core chat & ingest endpoints
+│   │   │   └── admin_endpoints.py # Tenant management & API keys
+│   │   ├── auth.py         # Supabase JWT & API Key validation
+│   │   ├── db.py           # Supabase client singleton
+│   │   ├── models.py       # SQLAlchemy ORM models (Tenant, ApiKey, Config)
+│   │   └── main.py         # FastAPI application entry point
 │   ├── ingestion/
-│   │   ├── loaders.py          # Document loaders (PDF, DOCX, images, OCR)
-│   │   └── pipeline.py         # Full ingestion: load → chunk → embed → upsert
+│   │   └── pipeline.py     # Document ingestion to specific Pinecone namespaces
 │   ├── Mcp_server/
-│   │   └── server.py           # FastMCP server exposing ask_support_agent()
-│   ├── storage/
-│   │   └── cloudinary_storage.py   # Cloudinary upload/list/delete/download
-│   ├── tools/
-│   │   └── slack_notifier.py   # Slack alert sender
-│   ├── data/                   # Local staging dir for documents pre-ingestion
-│   ├── pyproject.toml
-│   └── requirements.txt
+│   │   └── server.py       # FastMCP server exposing ask_support_agent()
+│   └── storage/
+│       └── cloudinary_storage.py   # Tenant-prefixed cloud storage
 │
 └── Front_end/
     ├── index.html          # Landing page
-    ├── dashboard.html      # Live chat dashboard
-    ├── docs.html           # API documentation & MCP connection guide
-    ├── index.css           # Shared stylesheet
-    ├── script.js           # Landing page JavaScript
-    └── dashboard.js        # Dashboard chat logic (SSE streaming)
+    ├── auth.html           # Supabase sign-up / sign-in
+    ├── dashboard.html      # Tenant Admin Dashboard SPA
+    ├── widget.js           # Embeddable widget script for external sites
+    └── docs.html           # API documentation & MCP connection guide
 ```
 
 ---
@@ -184,244 +187,113 @@ Lyraa_agent/
 
 - **Python 3.14+**
 - **[uv](https://docs.astral.sh/uv/)** (recommended) or pip
-- **Tesseract OCR** (for image/scanned-PDF ingestion) — [installation guide](https://github.com/UB-Mannheim/tesseract/wiki)
-- API keys for: Groq, Pinecone, Google GenAI, Cohere, Cloudinary, Tavily, Slack (optional)
+- **Tesseract OCR** (for image/scanned-PDF ingestion)
+- **Supabase Project** (Database & Auth setup)
+- API keys for: Groq, Pinecone, Google GenAI, Cohere, Cloudinary, Tavily
 
 ### Installation
 
 1. **Clone the repository:**
-
    ```bash
    git clone https://github.com/your-username/Lyraa_agent.git
    cd Lyraa_agent/Back_end
    ```
 
 2. **Create and activate a virtual environment:**
-
-   Using `uv` (recommended):
-
    ```bash
-   uv sync
+   uv sync  # or use pip install -r requirements.txt
    ```
 
-   Using pip:
-
-   ```bash
-   python -m venv .venv
-
-   # Windows
-   .venv\Scripts\activate
-
-   # macOS/Linux
-   source .venv/bin/activate
-
-   pip install -r requirements.txt
-   ```
+3. **Supabase Database Setup:**
+   Run the SQL migration script from `Back_end/app/migrations/001_initial.sql` in your Supabase project's SQL Editor to create the necessary tables (`tenants`, `agent_configs`, `api_keys`, etc.).
 
 ### Environment Variables
 
-Create a `.env` file in the `Back_end/` directory with the following keys:
+Create a `.env` file in the `Back_end/` directory:
 
 ```env
-# LLM — Groq
+# Supabase
+SUPABASE_URL=https://<your_project>.supabase.co
+SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+SUPABASE_JWT_SECRET=your_supabase_jwt_secret
+
+# AI APIs
 GROQ_API_KEY=your_groq_api_key
 GROQ_MODEL=llama-3.1-8b-instant
-
-# Embeddings — Google GenAI
 GOOGLE_API_KEY=your_google_api_key
-
-# Vector Store — Pinecone
 PINECONE_API_KEY=your_pinecone_api_key
 PINECONE_INDEX_NAME=lyraa-support
-
-# Re-ranking — Cohere
 COHERE_API_KEY=your_cohere_api_key
 
-# Cloud Storage — Cloudinary
+# Integrations
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_cloudinary_api_key
 CLOUDINARY_API_SECRET=your_cloudinary_api_secret
-
-# Web Scraping — Tavily
 TAVILY_API_KEY=your_tavily_api_key
-
-# Escalation — Slack (optional)
 SLACK_BOT_TOKEN=xoxb-your-slack-bot-token
 SLACK_CHANNEL_ID=your_channel_id
-
-# Observability — Arize Phoenix (optional, non-Windows only)
-PHOENIX_COLLECTOR_ENDPOINT=http://localhost:6006/v1/traces
-PHOENIX_API_KEY=your_phoenix_api_key
 ```
 
 ### Running the Server
 
 **Start the FastAPI backend:**
-
 ```bash
 cd Back_end
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
-
-The API will be available at `http://localhost:8000`.  
-Interactive Swagger docs at `http://localhost:8000/docs`.
+The API is available at `http://localhost:8000` and Swagger docs at `http://localhost:8000/docs`.
 
 **Open the frontend:**
-
 ```bash
 cd Front_end
 python -m http.server 3000
-# Visit http://localhost:3000
 ```
+Visit `http://localhost:3000/index.html`.
 
 ---
 
 ## 📡 API Reference
 
+### Public Endpoints (Widget / Integrations)
+Requires `X-API-Key` header generated from the tenant dashboard.
+
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/health` | Health check |
-| `POST` | `/api/chat` | Synchronous chat (full response) |
-| `POST` | `/api/chat/stream` | **Streaming chat** via SSE |
-| `POST` | `/api/upload` | Upload a document to Cloudinary |
-| `GET` | `/api/documents` | List documents for a user |
-| `GET` | `/api/documents/download` | Download a file from Cloudinary |
-| `DELETE` | `/api/documents` | Delete a file from Cloudinary |
-| `POST` | `/api/add-link` | Scrape a URL and store its content |
+| `POST` | `/api/chat` | Synchronous chat |
+| `POST` | `/api/chat/stream` | Streaming chat via SSE |
+
+### Admin Endpoints (Dashboard)
+Requires Supabase JWT (`Authorization: Bearer <token>`).
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/admin/tenants/me` | Get own tenant profile |
+| `POST` | `/api/admin/api-keys` | Generate new API key |
+| `GET` | `/api/admin/agent-config` | Get AI agent persona config |
 | `POST` | `/api/ingest` | Run the RAG ingestion pipeline |
-| `POST` | `/api/cleanup` | Manually trigger 24-hr expiry cleanup |
-
-### Chat Example
-
-**POST** `/api/chat`
-
-```json
-// Request
-{
-  "message": "What is your return policy?",
-  "user_id": "user-123"
-}
-
-// Response
-{
-  "response": "Our return policy allows returns within 30 days...",
-  "intent": "general_query"
-}
-```
-
-**POST** `/api/chat/stream` — SSE response:
-
-```
-data: {"token": "Our ", "intent": "general_query", "done": false}
-data: {"token": "return policy...", "intent": "general_query", "done": false}
-data: {"token": "", "intent": "general_query", "done": true}
-```
-
-### Intent Types
-
-| Intent | Trigger | Routing Path |
-|---|---|---|
-| `smalltalk` | Greetings, thanks, farewells | Instant canned reply — zero pipeline cost |
-| `general_query` | Company, product, or policy questions | RAG → Pinecone + Cohere + Groq |
-| `order_query` | Order status, tracking, returns | Direct order tool lookup |
-| `ambiguous` | Complex / mixed messages | Full ReAct agent reasoning loop |
+| `POST` | `/api/upload` | Upload a document to tenant storage |
 
 ---
 
-## 🔌 MCP Server
+## 🔌 Embeddable Widget
 
-Lyraa exposes a **Model Context Protocol (MCP)** server, allowing Claude Desktop and other MCP-compatible clients to invoke the support agent as a native tool.
+Tenants can easily embed the Lyraa agent on their own websites.
+1. Generate an API Key from the Lyraa Dashboard.
+2. Paste the following snippet into the `<head>` or `<body>` of the external site:
 
-**Start the MCP server:**
-
-```bash
-cd Back_end
-python Mcp_server/server.py
+```html
+<script src="https://your-vercel-domain.vercel.app/widget.js"
+        data-api-key="lyr_abc123xyz..."></script>
 ```
 
-**Available Tool:**
-
-```
-Tool Name  : ask_support_agent
-Description: Ask the RAG-powered customer support agent a question.
-Parameters :
-  - query   (str) : The user's question
-  - user_id (str) : Optional user identifier (default: "mcp-user")
-```
-
-**Claude Desktop configuration** (`claude_desktop_config.json`):
-
-```json
-{
-  "mcpServers": {
-    "lyraa": {
-      "command": "python",
-      "args": ["path/to/Back_end/Mcp_server/server.py"]
-    }
-  }
-}
-```
-
-See `Front_end/docs.html` for a full visual walkthrough.
-
----
-
-## 🖥 Frontend
-
-A pure HTML/CSS/JS multi-page application — no build step required.
-
-| Page | File | Description |
-|---|---|---|
-| Landing Page | `index.html` | Marketing overview of Lyraa |
-| Agent Dashboard | `dashboard.html` | Live chat UI with SSE streaming |
-| API Docs | `docs.html` | API reference + MCP connection guide |
-
----
-
-## ⚙️ How It Works
-
-### 1. Intent Classification (Zero-Cost Fast Path)
-
-Every user message is first routed by a pure regex/keyword classifier before any AI pipeline is invoked:
-
-```
-Message → Intent Classifier
-   ├── smalltalk          → instant canned reply (no LLM, no Pinecone)
-   ├── general_query      → RAG pipeline (Pinecone → Cohere → Groq)
-   ├── order_query + ID   → check_order_status() tool
-   ├── order_query, no ID → politely ask for the order ID
-   └── ambiguous          → full ReAct agent loop
-```
-
-### 2. RAG Pipeline
-
-For `general_query` intents:
-1. Embed the query using **Google GenAI** (`text-embedding-004`)
-2. Retrieve top-5 semantically similar chunks from **Pinecone**
-3. Re-rank retrieved chunks using **Cohere** (keep top-3)
-4. Stream the answer token-by-token from **Groq** (Llama 3.1 8B)
-
-### 3. Document Ingestion
-
-```
-Document (PDF / DOCX / Image / CSV / Web URL)
-   ↓ Load + OCR (PyMuPDF + pytesseract)
-   ↓ Semantic Chunking (SemanticSplitterNodeParser + SentenceSplitter fallback)
-   ↓ Google GenAI Embeddings
-   ↓ Upsert to Pinecone
-   ↓ Backup upload to Cloudinary (24-hr TTL auto-expiry)
-```
-
-### 4. Human Escalation
-
-When the `escalate_to_human` tool is triggered by the ReAct agent, it sends a formatted alert message to your configured **Slack channel** using the Slack SDK.
+This injects a floating chat UI that connects directly to the tenant's custom agent and knowledge base.
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please open an issue first to discuss the change you'd like to make.
-
+Contributions are welcome!
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/your-feature`
 3. Commit your changes: `git commit -m 'feat: add your feature'`
@@ -437,7 +309,5 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 ---
 
 <div align="center">
-
 Built with ❤️ by [@PRG](https://prg-portfolio.vercel.app/)
-
 </div>
