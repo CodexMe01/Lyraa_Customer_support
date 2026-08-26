@@ -31,7 +31,7 @@ for candidate in (str(PROJECT_ROOT), str(PROJECT_ROOT.parent)):
 from agent.bot import chat_with_agent, stream_chat_with_agent
 from agent.rag import invalidate_engine
 from ingestion.pipeline import run_ingestion_pipeline
-from storage.cloudinary_storage import CloudinaryStorage
+from storage.supabase_storage import SupabaseStorage
 
 from app.auth import get_tenant_from_request
 from app.db import get_db
@@ -48,8 +48,8 @@ router = APIRouter()
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
-# Singleton Cloudinary client
-_storage = CloudinaryStorage()
+# Singleton Supabase storage client
+_storage = SupabaseStorage()
 
 
 # ---------------------------------------------------------------------------
@@ -141,7 +141,7 @@ async def api_chat_stream(
 
 
 # ---------------------------------------------------------------------------
-# Upload → Cloudinary (tenant-scoped prefix)
+# Upload → Supabase (tenant-scoped prefix)
 # ---------------------------------------------------------------------------
 
 @router.post("/upload")
@@ -150,7 +150,7 @@ async def upload_file(
     tenant: Tenant = Depends(get_tenant_from_request),
 ):
     """
-    Upload a file to Cloudinary under the tenant's own folder:
+    Upload a file to Supabase under the tenant's own folder:
         customer_support/tenant_<slug>/<type>/<filename>
 
     Call POST /api/ingest afterwards to index the file for RAG search.

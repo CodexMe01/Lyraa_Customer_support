@@ -313,10 +313,10 @@ async def get_analytics(
         for row in intent_result.all()
     ]
 
-    # Document count (from Cloudinary)
-    from storage.cloudinary_storage import CloudinaryStorage
+    # Document count (from Supabase Storage)
+    from storage.supabase_storage import SupabaseStorage
     try:
-        storage = CloudinaryStorage()
+        storage = SupabaseStorage()
         docs = storage.list_files(user_id=f"tenant_{tenant.slug}")
         total_documents = len(docs)
     except Exception:
@@ -389,9 +389,9 @@ async def get_overview(
         )
     )
 
-    from storage.cloudinary_storage import CloudinaryStorage
+    from storage.supabase_storage import SupabaseStorage
     try:
-        docs = CloudinaryStorage().list_files(user_id=f"tenant_{tenant.slug}")
+        docs = SupabaseStorage().list_files(user_id=f"tenant_{tenant.slug}")
         doc_count = len(docs)
     except Exception:
         doc_count = 0

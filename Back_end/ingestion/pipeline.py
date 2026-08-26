@@ -18,7 +18,7 @@ for candidate in (str(PROJECT_ROOT), str(PROJECT_ROOT.parent)):
     if candidate not in sys.path:
         sys.path.insert(0, candidate)
 
-from storage.cloudinary_storage import CloudinaryStorage
+from storage.supabase_storage import SupabaseStorage
 
 load_dotenv()
 
@@ -99,7 +99,7 @@ def create_or_update_index(documents: list[Document], tenant_id: str) -> VectorS
 def run_ingestion_pipeline(
     data_dir: str = "./data",
     mode: str = "all",
-    storage: Optional[CloudinaryStorage] = None,
+    storage: Optional[SupabaseStorage] = None,
     tenant_id: str = "anonymous",
     tenant_slug: str = "anonymous",
 ):
@@ -115,14 +115,14 @@ def run_ingestion_pipeline(
     """
     print(f"[Ingest] Loading documents (mode={mode}, tenant={tenant_id})...")
 
-    storage_client = storage or CloudinaryStorage()
+    storage_client = storage or SupabaseStorage()
     docs = []
 
-    # ── Fetch from Cloudinary (tenant-prefixed folder) ─────────────────────────
+    # ── Fetch from Supabase (tenant-prefixed folder) ─────────────────────────
     try:
         cloud_documents = storage_client.list_files(user_id=tenant_slug)
         if cloud_documents:
-            print(f"[Ingest] Found {len(cloud_documents)} Cloudinary document(s) for tenant '{tenant_slug}'.")
+            print(f"[Ingest] Found {len(cloud_documents)} Supabase document(s) for tenant '{tenant_slug}'.")
             for asset in cloud_documents:
                 public_id = asset.get("public_id")
                 resource_type = asset.get("resource_type", "raw")
@@ -131,7 +131,7 @@ def run_ingestion_pipeline(
                 try:
                     file_bytes = storage_client.download_file(public_id, resource_type=resource_type)
                 except Exception as exc:
-                    print(f"[Ingest] Skipping Cloudinary asset {public_id}: {exc}")
+                    print(f"[Ingest] Skipping Supabase asset {public_id}: {exc}")
                     continue
 
                 filename = asset.get("filename") or public_id.split("/")[-1]
@@ -139,7 +139,7 @@ def run_ingestion_pipeline(
                     continue
                 docs.extend(load_documents_from_bytes(file_bytes, filename, mode=mode))
     except Exception as exc:
-        print(f"[Ingest] Cloudinary ingestion unavailable: {exc}")
+        print(f"[Ingest] Supabase ingestion unavailable: {exc}")
 
     # ── Fallback: local staging dir ────────────────────────────────────────────
     if not docs:
@@ -161,7 +161,7 @@ def load_documents_from_bytes(file_bytes: bytes, filename: str, mode: str = "all
     from pathlib import Path
 
     suffix = os.path.splitext(filename)[1].lower()
-    temp_dir = tempfile.mkdtemp(prefix="cloudinary_ingest_", dir=os.getcwd())
+    temp_dir = tempfile.mkdtemp(prefix="supabase_ingest_", dir=os.getcwd())
     temp_path = os.path.join(temp_dir, filename)
 
     try:
@@ -177,7 +177,7 @@ def load_documents_from_bytes(file_bytes: bytes, filename: str, mode: str = "all
             text = file_bytes.decode("utf-8")
             if text.strip():
                 from llama_index.core import Document as LlamaDocument
-                return [LlamaDocument(text=text, metadata={"source_file": filename, "doc_category": "cloudinary_document"})]
+                return [LlamaDocument(text=text, metadata={"source_file": filename, "doc_category": "supabase_document"})]
         except Exception:
             pass
 

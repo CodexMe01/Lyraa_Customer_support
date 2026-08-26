@@ -75,6 +75,10 @@ def _get_engine():
             pool_size=5,
             max_overflow=10,
             echo=False,  # set True to log SQL during development
+            connect_args={
+                "prepared_statement_cache_size": 0,
+                "statement_cache_size": 0,
+            },
         )
     return _async_engine
 
