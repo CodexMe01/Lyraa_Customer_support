@@ -22,6 +22,8 @@ from agent.intent import classify_intent
 
 load_dotenv()
 
+from app.tracing import get_tracer
+tracer = get_tracer("agent.bot")
 # ── Per-tenant agent cache ─────────────────────────────────────────────────────
 # Dict keyed by tenant_id (str UUID). Each tenant gets an independent ReAct agent
 # built with their custom system prompt.
@@ -170,40 +172,50 @@ def chat_with_agent(message: str, tenant_id: str, agent_config=None) -> dict:
       3. order_query + no order_id    → ask the user for their order ID
       4. fallback       → full ReAct agent
     """
-    tenant_id = str(tenant_id)
-    result = classify_intent(message)
-    greeting = getattr(agent_config, "greeting_msg", None) if agent_config else None
+    with tracer.start_as_current_span("chat_with_agent") as span:
+        tenant_id = str(tenant_id)
+        span.set_attribute("tenant_id", tenant_id)
+        
+        with tracer.start_as_current_span("intent_classification"):
+            result = classify_intent(message)
+            span.set_attribute("intent", result.intent)
+            
+        greeting = getattr(agent_config, "greeting_msg", None) if agent_config else None
 
-    print(f"[Intent] intent={result.intent} | order_id={result.order_id} | needs_order_id={result.needs_order_id}")
+        print(f"[Intent] intent={result.intent} | order_id={result.order_id} | needs_order_id={result.needs_order_id}")
 
-    # ── Path 0: Smalltalk ──────────────────────────────────────────────────────
-    if result.intent == "smalltalk":
-        return {"response": _smalltalk_reply(message, greeting_override=greeting), "intent": "smalltalk"}
+        # ── Path 0: Smalltalk ──────────────────────────────────────────────────────
+        if result.intent == "smalltalk":
+            with tracer.start_as_current_span("smalltalk_reply"):
+                return {"response": _smalltalk_reply(message, greeting_override=greeting), "intent": "smalltalk"}
 
-    # ── Path 1: General query → RAG ───────────────────────────────────────────
-    if result.intent == "general_query":
-        response = query_rag(message, tenant_id)
-        return {"response": response, "intent": "general_query"}
+        # ── Path 1: General query → RAG ───────────────────────────────────────────
+        if result.intent == "general_query":
+            # rag_query span will be added inside query_rag itself
+            response = query_rag(message, tenant_id)
+            return {"response": response, "intent": "general_query"}
 
-    # ── Path 2: Order query with ID ───────────────────────────────────────────
-    if result.intent == "order_query" and result.order_id:
-        response = check_order_status(result.order_id)
-        return {"response": response, "intent": "order_query"}
+        # ── Path 2: Order query with ID ───────────────────────────────────────────
+        if result.intent == "order_query" and result.order_id:
+            with tracer.start_as_current_span("order_lookup"):
+                response = check_order_status(result.order_id)
+                return {"response": response, "intent": "order_query"}
 
-    # ── Path 3: Order query, missing ID ──────────────────────────────────────
-    if result.intent == "order_query" and result.needs_order_id:
-        response = (
-            "I'd be happy to help you with your order! "
-            "Could you please share your **order ID**? "
-            "It usually looks like ORD-12345 or a 6-10 digit number and can be found "
-            "in your confirmation email."
-        )
-        return {"response": response, "intent": "order_query"}
+        # ── Path 3: Order query, missing ID ──────────────────────────────────────
+        if result.intent == "order_query" and result.needs_order_id:
+            response = (
+                "I'd be happy to help you with your order! "
+                "Could you please share your **order ID**? "
+                "It usually looks like ORD-12345 or a 6-10 digit number and can be found "
+                "in your confirmation email."
+            )
+            return {"response": response, "intent": "order_query"}
 
-    # ── Fallback: ReAct agent ─────────────────────────────────────────────────
-    agent = get_support_agent(tenant_id, agent_config)
-    agent_response = agent.chat(message)
-    return {"response": str(agent_response), "intent": "ambiguous"}
+        # ── Fallback: ReAct agent ─────────────────────────────────────────────────
+        with tracer.start_as_current_span("react_agent_chat"):
+            agent = get_support_agent(tenant_id, agent_config)
+            agent_response = agent.chat(message)
+            return {"response": str(agent_response), "intent": "ambiguous"}
 
 
 async def stream_chat_with_agent(message: str, tenant_id: str, agent_config=None):
@@ -215,56 +227,68 @@ async def stream_chat_with_agent(message: str, tenant_id: str, agent_config=None
     """
     from agent.rag import get_query_engine
 
-    tenant_id = str(tenant_id)
-    result = classify_intent(message)
-    intent = result.intent
-    greeting = getattr(agent_config, "greeting_msg", None) if agent_config else None
+    with tracer.start_as_current_span("stream_chat_with_agent") as span:
+        tenant_id = str(tenant_id)
+        span.set_attribute("tenant_id", tenant_id)
+        
+        with tracer.start_as_current_span("intent_classification"):
+            result = classify_intent(message)
+            intent = result.intent
+            span.set_attribute("intent", intent)
+            
+        greeting = getattr(agent_config, "greeting_msg", None) if agent_config else None
 
-    print(f"[Stream] intent={intent} | order_id={result.order_id} | tenant={tenant_id}")
+        print(f"[Stream] intent={intent} | order_id={result.order_id} | tenant={tenant_id}")
 
-    # ── Path 0: Smalltalk ──────────────────────────────────────────────────────
-    if intent == "smalltalk":
-        reply = _smalltalk_reply(message, greeting_override=greeting)
-        yield f"data: {json.dumps({'token': reply, 'intent': intent, 'done': True})}\n\n"
-        return
-
-    # ── Path 1: General query → streaming RAG ─────────────────────────────────
-    if intent == "general_query":
-        engine = get_query_engine(tenant_id)
-        if engine is None:
-            chunk = json.dumps({"token": "Knowledge base unavailable.", "intent": intent, "done": True})
-            yield f"data: {chunk}\n\n"
+        # ── Path 0: Smalltalk ──────────────────────────────────────────────────────
+        if intent == "smalltalk":
+            with tracer.start_as_current_span("smalltalk_reply"):
+                reply = _smalltalk_reply(message, greeting_override=greeting)
+            yield f"data: {json.dumps({'token': reply, 'intent': intent, 'done': True})}\n\n"
             return
-        streaming_response = engine.query(message)
-        try:
-            for token in streaming_response.response_gen:
-                chunk = json.dumps({"token": token, "intent": intent, "done": False})
+
+        # ── Path 1: General query → streaming RAG ─────────────────────────────────
+        if intent == "general_query":
+            engine = get_query_engine(tenant_id)
+            if engine is None:
+                chunk = json.dumps({"token": "Knowledge base unavailable.", "intent": intent, "done": True})
                 yield f"data: {chunk}\n\n"
-                await asyncio.sleep(0)
-        except Exception:
-            chunk = json.dumps({"token": str(streaming_response), "intent": intent, "done": False})
-            yield f"data: {chunk}\n\n"
-        yield f"data: {json.dumps({'token': '', 'intent': intent, 'done': True})}\n\n"
-        return
+                return
+            
+            # Streaming spans can be tricky to capture fully without a custom callback, 
+            # but LlamaIndex auto-instrumentation will handle the core retrieval spans.
+            streaming_response = engine.query(message)
+            try:
+                for token in streaming_response.response_gen:
+                    chunk = json.dumps({"token": token, "intent": intent, "done": False})
+                    yield f"data: {chunk}\n\n"
+                    await asyncio.sleep(0)
+            except Exception:
+                chunk = json.dumps({"token": str(streaming_response), "intent": intent, "done": False})
+                yield f"data: {chunk}\n\n"
+            yield f"data: {json.dumps({'token': '', 'intent': intent, 'done': True})}\n\n"
+            return
 
-    # ── Path 2: Order query with ID ───────────────────────────────────────────
-    if intent == "order_query" and result.order_id:
-        response = check_order_status(result.order_id)
-        yield f"data: {json.dumps({'token': response, 'intent': intent, 'done': True})}\n\n"
-        return
+        # ── Path 2: Order query with ID ───────────────────────────────────────────
+        if intent == "order_query" and result.order_id:
+            with tracer.start_as_current_span("order_lookup"):
+                response = check_order_status(result.order_id)
+            yield f"data: {json.dumps({'token': response, 'intent': intent, 'done': True})}\n\n"
+            return
 
-    # ── Path 3: Order query, missing ID ──────────────────────────────────────
-    if intent == "order_query" and result.needs_order_id:
-        response = (
-            "I'd be happy to help you with your order! "
-            "Could you please share your **order ID**? "
-            "It usually looks like ORD-12345 or a 6-10 digit number and can be found "
-            "in your confirmation email."
-        )
-        yield f"data: {json.dumps({'token': response, 'intent': intent, 'done': True})}\n\n"
-        return
+        # ── Path 3: Order query, missing ID ──────────────────────────────────────
+        if intent == "order_query" and result.needs_order_id:
+            response = (
+                "I'd be happy to help you with your order! "
+                "Could you please share your **order ID**? "
+                "It usually looks like ORD-12345 or a 6-10 digit number and can be found "
+                "in your confirmation email."
+            )
+            yield f"data: {json.dumps({'token': response, 'intent': intent, 'done': True})}\n\n"
+            return
 
-    # ── Fallback: ReAct agent (non-streaming) ─────────────────────────────────
-    agent = get_support_agent(tenant_id, agent_config)
-    agent_response = agent.chat(message)
-    yield f"data: {json.dumps({'token': str(agent_response), 'intent': 'ambiguous', 'done': True})}\n\n"
+        # ── Fallback: ReAct agent (non-streaming) ─────────────────────────────────
+        with tracer.start_as_current_span("react_agent_chat"):
+            agent = get_support_agent(tenant_id, agent_config)
+            agent_response = agent.chat(message)
+        yield f"data: {json.dumps({'token': str(agent_response), 'intent': 'ambiguous', 'done': True})}\n\n"

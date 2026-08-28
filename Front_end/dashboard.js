@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // API BASE URL
     const isLocalFile = window.location.protocol === 'file:';
-    const API_ORIGIN = isLocalFile ? 'http://localhost:8001' : window.location.origin;
+    const API_ORIGIN = isLocalFile ? 'http://localhost:8000' : window.location.origin;
     const API_BASE = `${API_ORIGIN}/api`;
 
     // Global fetch wrapper to include auth token

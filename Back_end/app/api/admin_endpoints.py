@@ -13,7 +13,7 @@ import uuid
 from datetime import datetime, timezone, timedelta
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy import func, select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -51,7 +51,7 @@ async def register_tenant(
     db: AsyncSession = Depends(get_db),
     # We can't use get_current_tenant here because the tenant row doesn't exist yet.
     # Instead we validate the raw JWT and pull the supabase_uid from it.
-    authorization: str = None,
+    authorization: str | None = Header(default=None),
 ):
     """
     Register a new tenant.

@@ -33,18 +33,10 @@ async def lifespan(app: FastAPI):
 
     # ── Optional Phoenix tracing ──────────────────────────────────────────────
     try:
-        import importlib
-        llama_index_module = importlib.import_module("openinference.instrumentation.llama_index")
-        phoenix_module = importlib.import_module("phoenix.otel")
-        LlamaIndexInstrumentor = llama_index_module.LlamaIndexInstrumentor
-        register = phoenix_module.register
-        os.environ["PHOENIX_COLLECTOR_ENDPOINT"] = os.getenv("PHOENIX_COLLECTOR_ENDPOINT", "")
-        os.environ["PHOENIX_API_KEY"] = os.getenv("PHOENIX_API_KEY", "")
-        tracer_provider = register(project_name="lyraa-multi-tenant", protocol="http/protobuf")
-        LlamaIndexInstrumentor().instrument(tracer_provider=tracer_provider)
-        print("[startup] Phoenix tracing enabled.")
+        from app.tracing import setup_tracing
+        setup_tracing()
     except Exception as exc:
-        print(f"[startup] Phoenix tracing unavailable: {exc}")
+        print(f"[startup] Tracing bootstrap failed: {exc}")
 
     # ── Pre-warm Supabase client (surfaces missing config early) ─────────────
     try:

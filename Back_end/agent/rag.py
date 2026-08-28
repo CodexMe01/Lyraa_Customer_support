@@ -20,6 +20,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+from app.tracing import get_tracer
+tracer = get_tracer("agent.rag")
+
 # ── Per-tenant query engine cache ──────────────────────────────────────────────
 # Dict keyed by tenant_id (str UUID). Built on first request, reused thereafter.
 _query_engines: dict[str, object] = {}
@@ -133,9 +136,13 @@ def invalidate_engine(tenant_id: str) -> None:
 
 def query_rag(question: str, tenant_id: str) -> str:
     """Query the tenant-scoped RAG knowledge base and return a string answer."""
-    engine = get_query_engine(tenant_id)
-    if not engine:
-        return "The knowledge base is empty or not configured for your account."
+    with tracer.start_as_current_span("rag_query") as span:
+        span.set_attribute("tenant_id", tenant_id)
+        span.set_attribute("query.text", question)
+        
+        engine = get_query_engine(tenant_id)
+        if not engine:
+            return "The knowledge base is empty or not configured for your account."
 
-    response = engine.query(question)
-    return str(response)
+        response = engine.query(question)
+        return str(response)

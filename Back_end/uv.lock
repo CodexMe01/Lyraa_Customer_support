@@ -605,20 +605,6 @@ wheels = [
 ]
 
 [[package]]
-name = "cloudinary"
-version = "1.45.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "certifi" },
-    { name = "six" },
-    { name = "urllib3" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/e2/5b/d17312bcebe524fc28a4b9032fc158737e991cde49cef7f86d18593c50c9/cloudinary-1.45.0.tar.gz", hash = "sha256:711404bfbdf87965afbefdb747ae78a03188b513846cccb0c1f8a8c612e375ba", size = 192094, upload-time = "2026-07-01T10:10:29.688Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c0/6d/5419a09c4ec2b7baf2723fbfc823bfbfea9ceeac177b30e01250ed23da2c/cloudinary-1.45.0-py3-none-any.whl", hash = "sha256:46c333101811841cf446c46054f4d9b507c2fa34c25152d1e922586c3b746196", size = 149030, upload-time = "2026-07-01T10:10:28.561Z" },
-]
-
-[[package]]
 name = "cloudpickle"
 version = "3.1.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1881,7 +1867,6 @@ dependencies = [
     { name = "asyncpg" },
     { name = "bcrypt" },
     { name = "chromadb" },
-    { name = "cloudinary" },
     { name = "cohere" },
     { name = "fastapi" },
     { name = "fastmcp" },
@@ -1896,6 +1881,7 @@ dependencies = [
     { name = "opentelemetry-exporter-otlp-proto-grpc", marker = "sys_platform != 'win32'" },
     { name = "opentelemetry-exporter-otlp-proto-http", marker = "sys_platform != 'win32'" },
     { name = "opentelemetry-sdk", marker = "sys_platform != 'win32'" },
+    { name = "phoenix" },
     { name = "pinecone" },
     { name = "pydantic" },
     { name = "pymupdf" },
@@ -1917,7 +1903,6 @@ requires-dist = [
     { name = "asyncpg", specifier = ">=0.29.0" },
     { name = "bcrypt", specifier = ">=4.0.0" },
     { name = "chromadb", specifier = ">=1.5.9" },
-    { name = "cloudinary", specifier = ">=1.45.0" },
     { name = "cohere", specifier = ">=5.21.1" },
     { name = "fastapi", specifier = ">=0.141.1" },
     { name = "fastmcp", specifier = ">=2.14.1" },
@@ -1932,6 +1917,7 @@ requires-dist = [
     { name = "opentelemetry-exporter-otlp-proto-grpc", marker = "sys_platform != 'win32'", specifier = "==1.40.0" },
     { name = "opentelemetry-exporter-otlp-proto-http", marker = "sys_platform != 'win32'", specifier = "==1.40.0" },
     { name = "opentelemetry-sdk", marker = "sys_platform != 'win32'", specifier = "==1.40.0" },
+    { name = "phoenix", specifier = ">=0.9.1" },
     { name = "pinecone", specifier = ">=7.3.0" },
     { name = "pydantic", specifier = ">=2.13.4" },
     { name = "pymupdf", specifier = ">=1.24.0" },
@@ -2578,6 +2564,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/fa/2a/52a8da6fe965dea61
 wheels = [
     { url = "https://files.pythonhosted.org/packages/9a/70/875f4a23bfc4731703a5835487d0d2fb999031bd415e7d17c0ae615c18b7/pathvalidate-3.3.1-py3-none-any.whl", hash = "sha256:5263baab691f8e1af96092fa5137ee17df5bdfbd6cff1fcac4d6ef4bc2e1735f", size = 24305, upload-time = "2025-06-15T09:07:19.117Z" },
 ]
+
+[[package]]
+name = "phoenix"
+version = "0.9.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/d9/c1/ceb5ee9a7e70572741017fcf33b02b48bee4caa8ed8b0dfc2cbe6d299047/phoenix-0.9.1.zip", hash = "sha256:16c5d61d2e13c0ece7d2f656bcbd4532755ca36c1a3753f9158a5d53f58ebb20", size = 3625, upload-time = "2013-04-03T05:44:17.525Z" }
 
 [[package]]
 name = "pillow"
