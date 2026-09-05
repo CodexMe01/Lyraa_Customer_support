@@ -51,8 +51,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
         if (!response.ok) {
-            let detail = 'API Error';
-            try { const err = await response.json(); detail = err.detail || detail; } catch(e) {}
+            let detail = `HTTP ${response.status}`;
+            try { const err = await response.json(); detail = err.detail || JSON.stringify(err); } catch(e) {
+                try { detail = await response.text(); } catch(_) {}
+            }
             throw new Error(detail);
         }
         return response.json();
@@ -271,8 +273,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             docs.forEach(doc => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${doc.name}</td>
-                    <td>${(doc.size / 1024).toFixed(1)} KB</td>
+                    <td>${doc.filename}</td>
+                    <td>${((doc.size || 0) / 1024).toFixed(1)} KB</td>
                     <td><button class="btn btn-outline delete-doc-btn" data-id="${doc.public_id}" style="padding: 0.25rem 0.5rem; color: var(--color-danger); border-color: var(--color-danger); font-size: 0.75rem;">Delete</button></td>
                 `;
                 tbody.appendChild(tr);
@@ -322,11 +324,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             await apiFetch('/upload', { method: 'POST', body: formData });
             uploadStatus.style.color = 'green';
             uploadStatus.textContent = `Successfully uploaded ${file.name}. Don't forget to Sync & Ingest!`;
-            fileInput.value = '';
             loadDocuments();
         } catch (err) {
             uploadStatus.style.color = 'red';
             uploadStatus.textContent = `Upload failed: ${err.message}`;
+        } finally {
+            fileInput.value = '';  // Always reset so same file can be re-selected
         }
     }
 

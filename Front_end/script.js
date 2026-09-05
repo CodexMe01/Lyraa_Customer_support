@@ -1,6 +1,4 @@
-/* ============================================
-   INTERCOM CLONE - MAIN JAVASCRIPT
-   ============================================ */
+
 
 document.addEventListener('DOMContentLoaded', () => {
 
