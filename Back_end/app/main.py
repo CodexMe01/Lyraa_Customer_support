@@ -31,12 +31,7 @@ async def lifespan(app: FastAPI):
     """Application startup / shutdown lifecycle."""
     print("[startup] Lyraa multi-tenant backend starting...")
 
-    # ── Optional Phoenix tracing ──────────────────────────────────────────────
-    try:
-        from app.tracing import setup_tracing
-        setup_tracing()
-    except Exception as exc:
-        print(f"[startup] Tracing bootstrap failed: {exc}")
+
 
     # ── Pre-warm Supabase client (surfaces missing config early) ─────────────
     try:
@@ -61,13 +56,13 @@ app = FastAPI(
 # ── CORS ──────────────────────────────────────────────────────────────────────
 # In production set ALLOWED_ORIGINS=https://yourdomain.com,https://app.yourdomain.com
 _raw_origins = os.getenv("ALLOWED_ORIGINS", "*")
-_origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+# _origins = [o.strip().rstrip("/") for o in _raw_origins.split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_raw_origins,   # later change it to original domain in production
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_origins=["*"],   # later change it to original domain in production
+    allow_credentials=False,
+    allow_methods=["*"],    
     allow_headers=["*"],
 )
 

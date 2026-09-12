@@ -199,23 +199,24 @@ async def get_tenant_from_request(
 ) -> Tenant:
     """
     Multi-path FastAPI dependency used on public endpoints (chat, upload, etc.).
-
-    Tries:
-      1. Authorization: Bearer <jwt>
-      2. X-API-Key: <raw_key>
-    Raises 401 if neither succeeds.
     """
     auth_header = request.headers.get("Authorization", "")
+    print(f"[AUTH DEBUG] Authorization header length: {len(auth_header)}")
     if auth_header.startswith("Bearer "):
         token = auth_header.removeprefix("Bearer ").strip()
         try:
             payload = verify_supabase_token(token)
             supabase_uid = payload.get("sub")
+            print(f"[AUTH DEBUG] Token verified. UID: {supabase_uid}")
             if supabase_uid:
                 tenant = await _get_tenant_by_supabase_uid(supabase_uid, db)
                 if tenant:
+                    print(f"[AUTH DEBUG] Tenant found: {tenant.slug}")
                     return tenant
-        except HTTPException:
+                else:
+                    print("[AUTH DEBUG] No tenant found in DB for this UID!")
+        except HTTPException as e:
+            print(f"[AUTH DEBUG] verify_supabase_token failed: {e.detail}")
             pass  # Fall through to API key check
 
     api_key = request.headers.get("X-API-Key", "").strip()
@@ -223,6 +224,8 @@ async def get_tenant_from_request(
         tenant = await _get_tenant_by_api_key(api_key, db)
         if tenant:
             return tenant
+        else:
+            print("[AUTH DEBUG] Invalid API key provided.")
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

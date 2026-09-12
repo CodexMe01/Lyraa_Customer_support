@@ -1,43 +1,42 @@
 import os
 import logging
+from llama_index.observability.otel import LlamaIndexOpenTelemetry
+
+from langfuse import get_client
+
+langfuse = get_client()
+
+# Verify connection
+if langfuse.auth_check():
+    print("Langfuse client is authenticated and ready!")
+else:
+    print("Authentication failed. Please check your credentials and host.")
 
 logger = logging.getLogger(__name__)
 
 def setup_tracing():
     """
-    Bootstrap Phoenix / OpenTelemetry tracing for the Lyraa backend.
-    Reads PHOENIX_COLLECTOR_ENDPOINT and PHOENIX_API_KEY from environment.
+    Bootstrap Langfuse tracing for the Lyraa backend.
+    Reads LANGFUSE_SECRET_KEY, LANGFUSE_PUBLIC_KEY, and LANGFUSE_HOST from environment.
     """
-    endpoint = os.getenv("PHOENIX_COLLECTOR_ENDPOINT")
-    api_key = os.getenv("PHOENIX_API_KEY")
+    secret_key = os.getenv("LANGFUSE_SECRET_KEY")
+    public_key = os.getenv("LANGFUSE_PUBLIC_KEY")
 
-    if not endpoint or not api_key:
-        logger.warning("Phoenix tracing disabled: Missing PHOENIX_COLLECTOR_ENDPOINT or PHOENIX_API_KEY")
+    if not secret_key or not public_key:
+        logger.warning("Langfuse tracing disabled: Missing keys")
         return None
 
     try:
-        from phoenix.otel import register
-        from openinference.instrumentation.llama_index import LlamaIndexInstrumentor
+        instrumentor = LlamaIndexOpenTelemetry()
+        instrumentor.start()
         
-        # We explicitly set protocol to http/protobuf
-        # Phoenix register automatically picks up PHOENIX_COLLECTOR_ENDPOINT 
-        # and PHOENIX_API_KEY from os.environ
-        tracer_provider = register(
-            project_name="lyraa-multi-tenant",
-            endpoint=endpoint,
-            protocol="http/protobuf"
-        )
-        
-        # Instrument LlamaIndex
-        LlamaIndexInstrumentor().instrument(tracer_provider=tracer_provider)
-        
-        logger.info(f"Phoenix tracing enabled. Project: lyraa-multi-tenant")
-        return tracer_provider
+        logger.info("Langfuse tracing enabled.")
+        return instrumentor
     except ImportError as e:
-        logger.error(f"Phoenix tracing unavailable. Missing dependencies: {e}")
+        logger.error(f"Langfuse tracing unavailable. Missing dependencies: {e}")
         return None
     except Exception as exc:
-        logger.error(f"Failed to initialize Phoenix tracing: {exc}")
+        logger.error(f"Failed to initialize Langfuse tracing: {exc}")
         return None
 
 def get_tracer(name: str):

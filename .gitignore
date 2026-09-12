@@ -5,6 +5,8 @@
 # Python virtual environment
 Back_end/.venv
 
+Back_end/pyproject.toml
+
 # Python cache
 __pycache__/
 *.py[cod]
